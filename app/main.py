@@ -4,8 +4,6 @@ from uuid import uuid4
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
 from fastapi.responses import FileResponse, HTMLResponse
-
-
 from app.schemas import ProcessResponse
 from app.services.llm_service import LLMService
 from app.services.pdf_parser import PDFParser
@@ -13,8 +11,6 @@ from app.services.ppt_builder import PPTBuilder
 
 
 app = FastAPI(title="PDF to PPT MVP", version="0.2.0")
-
-
 llm_service = LLMService()
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("outputs")
@@ -46,7 +42,13 @@ def home() -> str:
   <p class="muted">curl 없이 파일 선택으로 업로드해 PPT를 생성할 수 있습니다.</p>
 
   <div class="card">
+<<<<<<< HEAD
   <form id="upload-form" method="post">
+=======
+
+    <form id="upload-form" method="post" enctype="multipart/form-data" onsubmit="event.preventDefault();">
+
+>>>>>>> d5f22a9394466d50b80760743b6003660df09d4d
       <label for="pdf_file">PDF 파일</label>
       <input id="pdf_file" name="pdf_file" type="file" accept="application/pdf" required />
 
@@ -62,7 +64,9 @@ def home() -> str:
       <label for="slide_count">슬라이드 수</label>
       <input id="slide_count" name="slide_count" type="number" value="10" min="1" max="30" />
 
-      <button type="submit">PPT 생성하기</button>
+
+      <button id="generate-btn" type="button">PPT 생성하기</button>
+
     </form>
 
     <div id="result"></div>
@@ -72,8 +76,9 @@ def home() -> str:
     const form = document.getElementById('upload-form');
     const result = document.getElementById('result');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const generateBtn = document.getElementById('generate-btn');
+
+    const submitForm = async () => {
       result.textContent = '처리 중...';
 
       const formData = new FormData(form);
@@ -100,16 +105,25 @@ result.innerHTML =
   "<strong>완료!</strong><br/>" +
   "생성 파일: " + data.output_ppt_path + "<br/>" +
   '<a href="' + downloadUrl + '">PPT 다운로드</a>';
+
       } catch (err) {
         result.textContent = "오류: " + err.message;
       }
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await submitForm();
+    });
+
+    generateBtn.addEventListener('click', async () => {
+      await submitForm();
+
     });
   </script>
 </body>
 </html>
     """
-
-
 
 @app.get("/health")
 def health() -> dict:
@@ -148,8 +162,6 @@ async def process_pdf(
 
     output_ppt = OUTPUT_DIR / f"{file_id}.pptx"
     PPTBuilder.build(result, output_ppt)
-
-
     return ProcessResponse(result=result, output_ppt_path=output_ppt.as_posix())
 
 
@@ -157,7 +169,6 @@ async def process_pdf(
 def download(file_name: str):
     safe_name = Path(file_name).name
     target = OUTPUT_DIR / safe_name
-
     if not target.exists():
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
     return FileResponse(target, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation")
