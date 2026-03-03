@@ -1,4 +1,6 @@
-from typing import List, Literal
+
+from typing import List, Literal, Optional
+
 
 from pydantic import BaseModel, Field
 
@@ -45,6 +47,15 @@ class PipelineResult(BaseModel):
     open_questions: List[str]
 
 
+
+class LLMRunMeta(BaseModel):
+    mode: Literal["openai", "fallback"]
+    used_fallback: bool
+    error_message: Optional[str] = None
+
+
 class ProcessResponse(BaseModel):
     result: PipelineResult
     output_ppt_path: str
+    llm_meta: LLMRunMeta
+

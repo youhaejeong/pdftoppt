@@ -1,11 +1,16 @@
 import json
+import logging
 import os
-from typing import Optional
+from typing import List, Optional, Tuple
+
 
 from openai import OpenAI
 
 from app.schemas import (
     DocumentSummary,
+
+    LLMRunMeta,
+
     PipelineResult,
     RequirementItem,
     Requirements,
@@ -13,6 +18,9 @@ from app.schemas import (
 )
 
 SYSTEM_PROMPT_PATH = "app/prompts/system_prompt.txt"
+
+logger = logging.getLogger(__name__)
+
 
 
 class LLMService:
@@ -27,13 +35,34 @@ class LLMService:
         audience: str,
         tone: str,
         slide_count: int,
-    ) -> PipelineResult:
+
+    ) -> Tuple[PipelineResult, LLMRunMeta]:
         if self.client:
             try:
-                return self._call_openai(text, purpose, audience, tone, slide_count)
-            except Exception:
-                return self._fallback(text, purpose, audience, slide_count)
-        return self._fallback(text, purpose, audience, slide_count)
+                result = self._call_openai(text, purpose, audience, tone, slide_count)
+                return result, LLMRunMeta(mode="openai", used_fallback=False)
+            except Exception as exc:
+                error_message = f"{type(exc).__name__}: {exc}"
+                logger.exception("OpenAI call failed. Falling back to deterministic mode")
+                return (
+                    self._fallback(text, purpose, audience, slide_count),
+                    LLMRunMeta(
+                        mode="fallback",
+                        used_fallback=True,
+                        error_message=error_message[:400],
+                    ),
+                )
+
+        logger.warning("OPENAI_API_KEY is not set. Using fallback mode")
+        return (
+            self._fallback(text, purpose, audience, slide_count),
+            LLMRunMeta(
+                mode="fallback",
+                used_fallback=True,
+                error_message="OPENAI_API_KEY is not set",
+            ),
+        )
+
 
     def _call_openai(
         self,
@@ -74,49 +103,43 @@ class LLMService:
         audience: str,
         slide_count: int,
     ) -> PipelineResult:
-        trimmed = [line.strip() for line in text.splitlines() if line.strip()]
-        key_takeaways = trimmed[: min(5, len(trimmed))] or ["문서 핵심 내용 파악 필요"]
 
-        functional = [
-            RequirementItem(
-                id="F-1",
-                text="PDF 업로드 및 텍스트 추출",
-                priority="High",
-                evidence="업로드 기반 분석 요구",
-            ),
-            RequirementItem(
-                id="F-2",
-                text="요구사항 자동 분류 및 PPT 아웃라인 생성",
-                priority="High",
-                evidence="요구사항 도출 및 PPT 제작 요청",
-            ),
-        ]
+        source_lines = self._extract_source_lines(text)
+        key_takeaways = source_lines[: min(5, len(source_lines))] or ["문서 핵심 내용 파악 필요"]
 
-        non_functional = [
-            RequirementItem(
-                id="NF-1",
-                text="응답 JSON 스키마 일관성 보장",
-                priority="Med",
-                evidence="자동화 파이프라인 연계 필요",
-            )
-        ]
+        functional = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["요구", "기능", "서비스", "구축", "지원"]),
+            prefix="F",
+            fallback=["문서 기반 기능 요구사항 상세 정의 필요"],
+            priority="High",
+        )
+        non_functional = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["성능", "보안", "안정", "품질", "응답시간"]),
+            prefix="NF",
+            fallback=["비기능 요구사항(성능/보안/운영) 정의 필요"],
+            priority="Med",
+        )
+        constraints = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["제약", "예산", "범위", "필수", "준수"]),
+            prefix="C",
+            fallback=["예산/범위/정책 제약사항 확인 필요"],
+            priority="Med",
+        )
+        timeline = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["일정", "기간", "단계", "마감", "월", "주"]),
+            prefix="T",
+            fallback=["주요 마일스톤 일정 정의 필요"],
+            priority="Med",
+        )
+        risks = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["리스크", "위험", "문제", "이슈", "지연"]),
+            prefix="R",
+            fallback=["핵심 리스크 식별 및 대응 계획 수립 필요"],
+            priority="Med",
+        )
 
-        outlines = []
-        for i in range(1, slide_count + 1):
-            outlines.append(
-                SlideOutline(
-                    slide_no=i,
-                    title=f"슬라이드 {i}",
-                    objective="핵심 내용 전달",
-                    key_points=[
-                        "핵심 요구사항 요약",
-                        "근거 기반 메시지",
-                        "실행 항목 제안",
-                    ],
-                    visual_type="bullet",
-                    speaker_note="필요 시 문서 원문 근거를 함께 설명",
-                )
-            )
+        outlines = self._build_outline_from_source(source_lines, slide_count)
+
 
         return PipelineResult(
             document_summary=DocumentSummary(
@@ -129,21 +152,87 @@ class LLMService:
             requirements=Requirements(
                 functional=functional,
                 non_functional=non_functional,
-                constraints=[],
-                timeline=[],
-                risks=[
-                    RequirementItem(
-                        id="R-1",
-                        text="원문 데이터 품질이 낮으면 분석 정확도 저하",
-                        priority="Med",
-                        evidence="스캔 PDF/OCR 품질 의존",
-                    )
-                ],
+
+                constraints=constraints,
+                timeline=timeline,
+                risks=risks,
+
             ),
             ppt_outline=outlines,
             open_questions=[
                 "최종 발표 대상의 의사결정 포인트는 무엇인가?",
                 "필수 포함해야 할 KPI/정량 지표가 있는가?",
-                "디자인 템플릿/브랜드 가이드가 있는가?",
+
+                "우선순위가 가장 높은 요구사항 3개는 무엇인가?",
             ],
         )
+
+    def _extract_source_lines(self, text: str) -> List[str]:
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        compact = []
+        for line in lines:
+            normalized = " ".join(line.split())
+            if len(normalized) >= 8:
+                compact.append(normalized)
+        return compact[:200]
+
+    def _pick_lines(self, lines: List[str], keywords: List[str], limit: int = 3) -> List[str]:
+        picked = [line for line in lines if any(k in line for k in keywords)]
+        return picked[:limit]
+
+    def _build_requirement_items(
+        self,
+        lines: List[str],
+        prefix: str,
+        fallback: List[str],
+        priority: str,
+    ) -> List[RequirementItem]:
+        base = lines if lines else fallback
+        items: List[RequirementItem] = []
+        for idx, line in enumerate(base, start=1):
+            items.append(
+                RequirementItem(
+                    id=f"{prefix}-{idx}",
+                    text=line,
+                    priority=priority,
+                    evidence=line,
+                )
+            )
+        return items
+
+    def _build_outline_from_source(self, lines: List[str], slide_count: int) -> List[SlideOutline]:
+        if not lines:
+            lines = ["문서에서 유의미한 본문을 찾지 못했습니다."]
+
+        objectives = [
+            "문서 배경 및 목적 정리",
+            "핵심 요구사항 도출",
+            "우선순위 및 근거 설명",
+            "실행 계획 제안",
+            "리스크 및 대응 정리",
+        ]
+
+        outlines: List[SlideOutline] = []
+        for i in range(1, slide_count + 1):
+            start = (i - 1) * 3
+            points: List[str] = []
+            for j in range(3):
+                idx = (start + j) % len(lines)
+                points.append(lines[idx][:80])
+
+            title_seed = lines[(i - 1) % len(lines)]
+            title = title_seed[:28] if title_seed else f"슬라이드 {i}"
+
+            outlines.append(
+                SlideOutline(
+                    slide_no=i,
+                    title=title,
+                    objective=objectives[(i - 1) % len(objectives)],
+                    key_points=points,
+                    visual_type="bullet",
+                    speaker_note="PDF 원문 문장 기반 자동 생성(fallback)",
+                )
+            )
+
+        return outlines
+

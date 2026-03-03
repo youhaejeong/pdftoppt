@@ -3,7 +3,9 @@ from uuid import uuid4
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
+
+
 from app.schemas import ProcessResponse
 from app.services.llm_service import LLMService
 from app.services.pdf_parser import PDFParser
@@ -11,6 +13,8 @@ from app.services.ppt_builder import PPTBuilder
 
 
 app = FastAPI(title="PDF to PPT MVP", version="0.2.0")
+
+
 llm_service = LLMService()
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("outputs")
@@ -18,8 +22,9 @@ OUTPUT_DIR = Path("outputs")
 
 
 @app.get("/", response_class=HTMLResponse)
-def home() -> str:
-    return """
+def home() -> HTMLResponse:
+    html = """
+
 <!doctype html>
 <html lang="ko">
 <head>
@@ -42,13 +47,9 @@ def home() -> str:
   <p class="muted">curl 없이 파일 선택으로 업로드해 PPT를 생성할 수 있습니다.</p>
 
   <div class="card">
-<<<<<<< HEAD
-  <form id="upload-form" method="post">
-=======
 
     <form id="upload-form" method="post" enctype="multipart/form-data" onsubmit="event.preventDefault();">
 
->>>>>>> d5f22a9394466d50b80760743b6003660df09d4d
       <label for="pdf_file">PDF 파일</label>
       <input id="pdf_file" name="pdf_file" type="file" accept="application/pdf" required />
 
@@ -91,23 +92,26 @@ def home() -> str:
 
         const data = await response.json();
         if (!response.ok) {
+
           result.textContent =  "오류: " + (data.detail || "요청 실패");
           return;
         }
 
+        const rawPath = data.output_ppt_path || '';
+        const normalized = rawPath.split('\\\\').join('/');
+        const fileName = normalized.split('/').pop();
+        const downloadUrl = `/v1/download/${encodeURIComponent(fileName)}`;
 
-       const rawPath = data.output_ppt_path || '';
-const normalized = rawPath.split('\\\\').join('/');
-const fileName = normalized.split('/').pop();
-const downloadUrl = '/v1/download/' + encodeURIComponent(fileName);
+        const modeText = data.llm_meta?.mode || 'unknown';
+        const errText = data.llm_meta?.error_message ? `<br/>LLM fallback 사유: ${data.llm_meta.error_message}` : '';
 
-result.innerHTML =
-  "<strong>완료!</strong><br/>" +
-  "생성 파일: " + data.output_ppt_path + "<br/>" +
-  '<a href="' + downloadUrl + '">PPT 다운로드</a>';
-
+        result.innerHTML =
+          "<strong>완료!</strong><br/>" +
+          "생성 파일: " + data.output_ppt_path + "<br/>" +
+          '<a href="' + downloadUrl + '">PPT 다운로드</a>';
       } catch (err) {
         result.textContent = "오류: " + err.message;
+
       }
     };
 
@@ -124,6 +128,20 @@ result.innerHTML =
 </body>
 </html>
     """
+    return HTMLResponse(
+        content=html,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
+
+
+@app.get("/.well-known/appspecific/com.chrome.devtools.json")
+def chrome_devtools_probe() -> Response:
+    return Response(status_code=204)
+
 
 @app.get("/health")
 def health() -> dict:
@@ -152,7 +170,9 @@ async def process_pdf(
     if not text:
         raise HTTPException(status_code=400, detail="PDF에서 텍스트를 추출하지 못했습니다.")
 
-    result = llm_service.build_result(
+
+    result, llm_meta = llm_service.build_result(
+
         text=text,
         purpose=purpose,
         audience=audience,
@@ -162,7 +182,10 @@ async def process_pdf(
 
     output_ppt = OUTPUT_DIR / f"{file_id}.pptx"
     PPTBuilder.build(result, output_ppt)
-    return ProcessResponse(result=result, output_ppt_path=output_ppt.as_posix())
+
+
+    return ProcessResponse(result=result, output_ppt_path=output_ppt.as_posix(), llm_meta=llm_meta)
+
 
 
 @app.get("/v1/download/{file_name:path}")

@@ -12,6 +12,7 @@ def test_health():
     assert resp.status_code == 200
     assert resp.json()['status'] == 'ok'
 
+
 def test_home_page_has_file_input():
     client = TestClient(app)
     resp = client.get('/')
@@ -46,4 +47,17 @@ def test_home_page_has_non_submitting_form():
     assert resp.status_code == 200
     assert 'onsubmit="event.preventDefault();"' in resp.text
     assert 'type="button"' in resp.text
+
+
+def test_home_page_cache_headers():
+    client = TestClient(app)
+    resp = client.get('/')
+    assert resp.status_code == 200
+    assert 'no-store' in resp.headers.get('cache-control', '')
+
+
+def test_chrome_devtools_probe_returns_204():
+    client = TestClient(app)
+    resp = client.get('/.well-known/appspecific/com.chrome.devtools.json')
+    assert resp.status_code == 204
 

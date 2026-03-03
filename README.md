@@ -120,11 +120,19 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
     ],
     "open_questions": ["..."]
   },
-  "output_ppt_path": "outputs/<uuid>.pptx"
+
+  "output_ppt_path": "outputs/<uuid>.pptx",
+  "llm_meta": {
+    "mode": "openai",
+    "used_fallback": false,
+    "error_message": null
+  }
 }
 ```
 
 ---
+
+응답의 `llm_meta` 필드로 OpenAI 사용 여부와 fallback 사유를 확인할 수 있습니다.
 
 ### GET `/v1/download/{file_name}`
 생성된 PPT 다운로드
@@ -143,6 +151,7 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 
 
 - 업로드 폼은 기본 페이지 이동을 막도록 구성되어, 버튼 클릭 시 `/?pdf_file=...`로 새로고침되지 않아야 정상입니다.
+- 브라우저 캐시로 구버전 화면이 남는 문제를 줄이기 위해, `/` 응답은 no-cache 헤더로 제공됩니다.
 
 
 > 만약 주소창에 `/?pdf_file=...` 같은 GET 쿼리가 보이면 브라우저 캐시를 비우고 새로고침 후 다시 시도하세요(최신 스크립트에서 업로드 후 링크가 바로 생성됩니다).
