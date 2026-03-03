@@ -32,6 +32,29 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
+
+## 2-1) Docker Compose로 한 번에 실행
+
+```bash
+docker compose up --build
+```
+
+실행 후 접속:
+- API 서버: `http://127.0.0.1:8000`
+- Swagger UI: `http://127.0.0.1:8000/docs`
+
+백그라운드 실행:
+
+```bash
+docker compose up -d --build
+```
+
+중지:
+
+```bash
+docker compose down
+```
+
 OpenAI 연동(선택):
 
 ```bash
@@ -113,12 +136,18 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/process" \
+
   -F "pdf_file=@./sample.pdf" \
+
   -F "purpose=경영진 의사결정" \
   -F "audience=CEO/임원" \
   -F "tone=데이터 중심" \
   -F "slide_count=12"
 ```
+
+
+> `의사결정.pdf`는 서버 폴더에 미리 넣지 않아도 됩니다. 위 커맨드를 실행하는 위치 기준 상대경로(또는 절대경로)로 전달하면 업로드됩니다.
+
 
 ## 5) 다음 확장 포인트
 - OCR 파이프라인 추가 (스캔 PDF 대응)
