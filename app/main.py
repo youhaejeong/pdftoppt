@@ -46,7 +46,7 @@ def home() -> str:
   <p class="muted">curl 없이 파일 선택으로 업로드해 PPT를 생성할 수 있습니다.</p>
 
   <div class="card">
-    <form id="upload-form">
+  <form id="upload-form" method="post">
       <label for="pdf_file">PDF 파일</label>
       <input id="pdf_file" name="pdf_file" type="file" accept="application/pdf" required />
 
@@ -86,24 +86,22 @@ def home() -> str:
 
         const data = await response.json();
         if (!response.ok) {
-          result.textContent = `오류: ${data.detail || '요청 실패'}`;
+          result.textContent =  "오류: " + (data.detail || "요청 실패");
           return;
         }
 
 
-        const rawPath = data.output_ppt_path || '';
-        const normalized = rawPath.replace(/\\/g, '/');
-        const fileName = normalized.split('/').pop();
-        const downloadUrl = `/v1/download/${encodeURIComponent(fileName)}`;
+       const rawPath = data.output_ppt_path || '';
+const normalized = rawPath.split('\\\\').join('/');
+const fileName = normalized.split('/').pop();
+const downloadUrl = '/v1/download/' + encodeURIComponent(fileName);
 
-
-        result.innerHTML = `
-          <strong>완료!</strong><br/>
-          생성 파일: ${data.output_ppt_path}<br/>
-          <a href="${downloadUrl}">PPT 다운로드</a>
-        `;
+result.innerHTML =
+  "<strong>완료!</strong><br/>" +
+  "생성 파일: " + data.output_ppt_path + "<br/>" +
+  '<a href="' + downloadUrl + '">PPT 다운로드</a>';
       } catch (err) {
-        result.textContent = `오류: ${err.message}`;
+        result.textContent = "오류: " + err.message;
       }
     });
   </script>
