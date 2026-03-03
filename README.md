@@ -132,6 +132,9 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 **Path Params**
 - `file_name`: `outputs` 폴더 내 파일명 (`<uuid>.pptx`)
 
+  - 예: `output_ppt_path`가 `outputs/abc.pptx`면 다운로드 URL은 `/v1/download/abc.pptx`
+
+
 **Response 200**
 - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
 
@@ -141,6 +144,9 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 브라우저에서 `http://127.0.0.1:8000` 접속 후 파일 선택(input)으로 `의사결정.pdf`를 업로드하고, 생성 완료 후 다운로드 링크를 클릭하면 됩니다.
 
 ## 5) cURL 예시
+
+
+> 윈도우 환경에서도 응답의 `output_ppt_path`는 `/` 형식으로 반환됩니다.
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/process" \

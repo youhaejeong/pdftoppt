@@ -90,8 +90,12 @@ def home() -> str:
           return;
         }
 
-        const fileName = data.output_ppt_path.split('/').pop();
-        const downloadUrl = `/v1/download/${fileName}`;
+
+        const rawPath = data.output_ppt_path || '';
+        const normalized = rawPath.replaceAll('\\', '/');
+        const fileName = normalized.split('/').pop();
+        const downloadUrl = `/v1/download/${encodeURIComponent(fileName)}`;
+
 
         result.innerHTML = `
           <strong>완료!</strong><br/>
@@ -108,7 +112,7 @@ def home() -> str:
     """
 
 
-main
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
@@ -147,12 +151,15 @@ async def process_pdf(
     output_ppt = OUTPUT_DIR / f"{file_id}.pptx"
     PPTBuilder.build(result, output_ppt)
 
-    return ProcessResponse(result=result, output_ppt_path=str(output_ppt))
+
+    return ProcessResponse(result=result, output_ppt_path=output_ppt.as_posix())
 
 
-@app.get("/v1/download/{file_name}")
+@app.get("/v1/download/{file_name:path}")
 def download(file_name: str):
-    target = OUTPUT_DIR / file_name
+    safe_name = Path(file_name).name
+    target = OUTPUT_DIR / safe_name
+
     if not target.exists():
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
     return FileResponse(target, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation")
