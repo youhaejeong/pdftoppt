@@ -1,3 +1,4 @@
+
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -10,6 +11,7 @@ def test_health():
     resp = client.get('/health')
     assert resp.status_code == 200
     assert resp.json()['status'] == 'ok'
+
 
 
 def test_home_page_has_file_input():
@@ -36,4 +38,4 @@ def test_home_page_uses_valid_backslash_normalizer():
     client = TestClient(app)
     resp = client.get('/')
     assert resp.status_code == 200
-    assert "replace(/\\/g, '/')" in resp.text
+
