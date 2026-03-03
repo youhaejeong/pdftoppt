@@ -10,8 +10,10 @@ def test_health():
     assert resp.json()['status'] == 'ok'
 
 
+
 def test_home_page_has_file_input():
     client = TestClient(app)
     resp = client.get('/')
     assert resp.status_code == 200
     assert 'type="file"' in resp.text
+

@@ -2,18 +2,23 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+
 from fastapi.responses import FileResponse, HTMLResponse
+
 
 from app.schemas import ProcessResponse
 from app.services.llm_service import LLMService
 from app.services.pdf_parser import PDFParser
 from app.services.ppt_builder import PPTBuilder
 
+
 app = FastAPI(title="PDF to PPT MVP", version="0.2.0")
+
 
 llm_service = LLMService()
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("outputs")
+
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -103,6 +108,7 @@ def home() -> str:
     """
 
 
+main
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
