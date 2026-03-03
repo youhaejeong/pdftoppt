@@ -3,11 +3,14 @@ import logging
 import os
 from typing import List, Optional, Tuple
 
+
 from openai import OpenAI
 
 from app.schemas import (
     DocumentSummary,
+
     LLMRunMeta,
+
     PipelineResult,
     RequirementItem,
     Requirements,
@@ -15,7 +18,9 @@ from app.schemas import (
 )
 
 SYSTEM_PROMPT_PATH = "app/prompts/system_prompt.txt"
+
 logger = logging.getLogger(__name__)
+
 
 
 class LLMService:
@@ -30,6 +35,7 @@ class LLMService:
         audience: str,
         tone: str,
         slide_count: int,
+
     ) -> Tuple[PipelineResult, LLMRunMeta]:
         if self.client:
             try:
@@ -56,6 +62,7 @@ class LLMService:
                 error_message="OPENAI_API_KEY is not set",
             ),
         )
+
 
     def _call_openai(
         self,
@@ -96,6 +103,7 @@ class LLMService:
         audience: str,
         slide_count: int,
     ) -> PipelineResult:
+
         source_lines = self._extract_source_lines(text)
         key_takeaways = source_lines[: min(5, len(source_lines))] or ["문서 핵심 내용 파악 필요"]
 
@@ -132,6 +140,7 @@ class LLMService:
 
         outlines = self._build_outline_from_source(source_lines, slide_count)
 
+
         return PipelineResult(
             document_summary=DocumentSummary(
                 title="PDF 기반 요구사항 분석",
@@ -143,14 +152,17 @@ class LLMService:
             requirements=Requirements(
                 functional=functional,
                 non_functional=non_functional,
+
                 constraints=constraints,
                 timeline=timeline,
                 risks=risks,
+
             ),
             ppt_outline=outlines,
             open_questions=[
                 "최종 발표 대상의 의사결정 포인트는 무엇인가?",
                 "필수 포함해야 할 KPI/정량 지표가 있는가?",
+
                 "우선순위가 가장 높은 요구사항 3개는 무엇인가?",
             ],
         )
@@ -223,3 +235,4 @@ class LLMService:
             )
 
         return outlines
+
