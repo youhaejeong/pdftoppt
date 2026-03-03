@@ -134,14 +134,15 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 
   - 예: `output_ppt_path`가 `outputs/abc.pptx`면 다운로드 URL은 `/v1/download/abc.pptx`
 
-
 **Response 200**
 - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
-
 
 ## 4) 웹에서 파일 업로드하기
 
 브라우저에서 `http://127.0.0.1:8000` 접속 후 파일 선택(input)으로 `의사결정.pdf`를 업로드하고, 생성 완료 후 다운로드 링크를 클릭하면 됩니다.
+
+
+> 만약 주소창에 `/?pdf_file=...` 같은 GET 쿼리가 보이면 브라우저 캐시를 비우고 새로고침 후 다시 시도하세요(최신 스크립트에서 업로드 후 링크가 바로 생성됩니다).
 
 ## 5) cURL 예시
 
