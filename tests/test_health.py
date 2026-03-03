@@ -1,3 +1,4 @@
+
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -10,6 +11,7 @@ def test_health():
     resp = client.get('/health')
     assert resp.status_code == 200
     assert resp.json()['status'] == 'ok'
+
 
 
 def test_home_page_has_file_input():
@@ -30,3 +32,4 @@ def test_download_accepts_outputs_prefixed_path(tmp_path, monkeypatch):
     resp = client.get('/v1/download/outputs/demo.pptx')
     assert resp.status_code == 200
     assert resp.content == b'dummy'
+

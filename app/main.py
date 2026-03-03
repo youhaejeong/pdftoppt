@@ -2,18 +2,23 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+
 from fastapi.responses import FileResponse, HTMLResponse
+
 
 from app.schemas import ProcessResponse
 from app.services.llm_service import LLMService
 from app.services.pdf_parser import PDFParser
 from app.services.ppt_builder import PPTBuilder
 
+
 app = FastAPI(title="PDF to PPT MVP", version="0.2.0")
+
 
 llm_service = LLMService()
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("outputs")
+
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -85,10 +90,12 @@ def home() -> str:
           return;
         }
 
+
         const rawPath = data.output_ppt_path || '';
         const normalized = rawPath.replaceAll('\\', '/');
         const fileName = normalized.split('/').pop();
         const downloadUrl = `/v1/download/${encodeURIComponent(fileName)}`;
+
 
         result.innerHTML = `
           <strong>완료!</strong><br/>
@@ -103,6 +110,7 @@ def home() -> str:
 </body>
 </html>
     """
+
 
 
 @app.get("/health")
@@ -143,6 +151,7 @@ async def process_pdf(
     output_ppt = OUTPUT_DIR / f"{file_id}.pptx"
     PPTBuilder.build(result, output_ppt)
 
+
     return ProcessResponse(result=result, output_ppt_path=output_ppt.as_posix())
 
 
@@ -150,6 +159,7 @@ async def process_pdf(
 def download(file_name: str):
     safe_name = Path(file_name).name
     target = OUTPUT_DIR / safe_name
+
     if not target.exists():
         raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다.")
     return FileResponse(target, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation")
