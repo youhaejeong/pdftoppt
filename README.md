@@ -164,7 +164,7 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/process" \
   -F "pdf_file=@./의사결정.pdf" \
-
+n
   -F "purpose=경영진 의사결정" \
   -F "audience=CEO/임원" \
   -F "tone=데이터 중심" \

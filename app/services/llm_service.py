@@ -20,9 +20,6 @@ from app.schemas import (
 SYSTEM_PROMPT_PATH = "app/prompts/system_prompt.txt"
 
 logger = logging.getLogger(__name__)
-
-
-
 class LLMService:
     def __init__(self) -> None:
         api_key = os.getenv("OPENAI_API_KEY")
@@ -162,7 +159,6 @@ class LLMService:
             open_questions=[
                 "최종 발표 대상의 의사결정 포인트는 무엇인가?",
                 "필수 포함해야 할 KPI/정량 지표가 있는가?",
-
                 "우선순위가 가장 높은 요구사항 3개는 무엇인가?",
             ],
         )
@@ -204,33 +200,64 @@ class LLMService:
         if not lines:
             lines = ["문서에서 유의미한 본문을 찾지 못했습니다."]
 
-        objectives = [
-            "문서 배경 및 목적 정리",
-            "핵심 요구사항 도출",
-            "우선순위 및 근거 설명",
-            "실행 계획 제안",
-            "리스크 및 대응 정리",
+
+        proposal_sections = [
+            ("제안 개요", "고객 배경과 제안 목적 정리", "비교"),
+            ("클라이언트 요구사항 요약", "핵심 요구사항을 우선순위로 정리", "표"),
+            ("요구사항 상세 분석", "기능/비기능/제약 사항을 구조화", "표"),
+            ("우리 회사 수행 역량", "SI 관점에서 수행 가능한 범위 제시", "아이콘"),
+            ("구현/운영 접근 방안", "기술 아키텍처와 실행 방법 제시", "프로세스"),
+            ("단계별 수행 계획", "일정 및 마일스톤 제시", "타임라인"),
+            ("투입 인력 및 역할", "역할과 책임(R&R) 정리", "표"),
+            ("리스크 및 대응 전략", "리스크 식별과 대응 방안 제시", "비교"),
+            ("기대효과 및 KPI", "정량/정성 효과와 KPI 제시", "표"),
+            ("결론 및 요청사항", "의사결정 포인트와 다음 액션 정리", "bullet"),
+        ]
+
+        capabilities = [
+            "요구사항 정의~개발~운영까지 End-to-End 수행",
+            "웹/모바일/백엔드/데이터 연계 통합 구축",
+            "레거시 연동 및 단계적 전환(무중단/저위험) 지원",
+            "운영 안정화·고도화 및 SLA 기반 기술지원",
+
         ]
 
         outlines: List[SlideOutline] = []
         for i in range(1, slide_count + 1):
-            start = (i - 1) * 3
+
+            section_title, objective, visual = proposal_sections[(i - 1) % len(proposal_sections)]
+            start_idx = (i - 1) * 3
             points: List[str] = []
-            for j in range(3):
-                idx = (start + j) % len(lines)
-                points.append(lines[idx][:80])
 
-            title_seed = lines[(i - 1) % len(lines)]
-            title = title_seed[:28] if title_seed else f"슬라이드 {i}"
+            if section_title == "우리 회사 수행 역량":
+                points = capabilities[:3]
+            elif section_title == "단계별 수행 계획":
+                points = [
+                    "1단계: 요구사항 상세화 및 범위 확정",
+                    "2단계: 설계/개발/연동 및 품질 검증",
+                    "3단계: 안정화/교육/운영 이관",
+                ]
+            elif section_title == "결론 및 요청사항":
+                points = [
+                    "우선순위 요구사항부터 단계적 착수 제안",
+                    "착수 전 워크숍으로 범위·일정·KPI 확정",
+                    "의사결정 후 즉시 실행 가능한 준비 완료",
+                ]
+            else:
+                for j in range(3):
+                    idx = (start_idx + j) % len(lines)
+                    points.append(lines[idx][:80])
 
+            note_evidence = lines[(i - 1) % len(lines)][:120]
             outlines.append(
                 SlideOutline(
                     slide_no=i,
-                    title=title,
-                    objective=objectives[(i - 1) % len(objectives)],
+                    title=section_title,
+                    objective=objective,
                     key_points=points,
-                    visual_type="bullet",
-                    speaker_note="PDF 원문 문장 기반 자동 생성(fallback)",
+                    visual_type=visual,
+                    speaker_note=f"문서 근거 기반 제안. 참고 문장: {note_evidence}",
+
                 )
             )
 

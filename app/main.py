@@ -93,17 +93,22 @@ def home() -> HTMLResponse:
         const data = await response.json();
         if (!response.ok) {
 
+
           result.textContent =  "오류: " + (data.detail || "요청 실패");
+
           return;
         }
 
         const rawPath = data.output_ppt_path || '';
+
         const normalized = rawPath.split('\\\\').join('/');
+
         const fileName = normalized.split('/').pop();
         const downloadUrl = `/v1/download/${encodeURIComponent(fileName)}`;
 
         const modeText = data.llm_meta?.mode || 'unknown';
         const errText = data.llm_meta?.error_message ? `<br/>LLM fallback 사유: ${data.llm_meta.error_message}` : '';
+
 
         result.innerHTML =
           "<strong>완료!</strong><br/>" +
@@ -111,6 +116,7 @@ def home() -> HTMLResponse:
           '<a href="' + downloadUrl + '">PPT 다운로드</a>';
       } catch (err) {
         result.textContent = "오류: " + err.message;
+
 
       }
     };
@@ -182,7 +188,6 @@ async def process_pdf(
 
     output_ppt = OUTPUT_DIR / f"{file_id}.pptx"
     PPTBuilder.build(result, output_ppt)
-
 
     return ProcessResponse(result=result, output_ppt_path=output_ppt.as_posix(), llm_meta=llm_meta)
 
