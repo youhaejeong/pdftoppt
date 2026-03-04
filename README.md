@@ -32,6 +32,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
+
 ## 2-1) Docker Compose로 한 번에 실행
 
 ```bash
@@ -39,7 +40,9 @@ docker compose up --build
 ```
 
 실행 후 접속:
+
 - 웹 업로드 화면: `http://127.0.0.1:8000`
+
 - API 서버: `http://127.0.0.1:8000`
 - Swagger UI: `http://127.0.0.1:8000/docs`
 
@@ -117,6 +120,7 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
     ],
     "open_questions": ["..."]
   },
+
   "output_ppt_path": "outputs/<uuid>.pptx",
   "llm_meta": {
     "mode": "openai",
@@ -135,6 +139,7 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 
 **Path Params**
 - `file_name`: `outputs` 폴더 내 파일명 (`<uuid>.pptx`)
+
   - 예: `output_ppt_path`가 `outputs/abc.pptx`면 다운로드 URL은 `/v1/download/abc.pptx`
 
 **Response 200**
@@ -144,18 +149,22 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 
 브라우저에서 `http://127.0.0.1:8000` 접속 후 파일 선택(input)으로 `의사결정.pdf`를 업로드하고, 생성 완료 후 다운로드 링크를 클릭하면 됩니다.
 
+
 - 업로드 폼은 기본 페이지 이동을 막도록 구성되어, 버튼 클릭 시 `/?pdf_file=...`로 새로고침되지 않아야 정상입니다.
 - 브라우저 캐시로 구버전 화면이 남는 문제를 줄이기 위해, `/` 응답은 no-cache 헤더로 제공됩니다.
+
 
 > 만약 주소창에 `/?pdf_file=...` 같은 GET 쿼리가 보이면 브라우저 캐시를 비우고 새로고침 후 다시 시도하세요(최신 스크립트에서 업로드 후 링크가 바로 생성됩니다).
 
 ## 5) cURL 예시
+
 
 > 윈도우 환경에서도 응답의 `output_ppt_path`는 `/` 형식으로 반환됩니다.
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/process" \
   -F "pdf_file=@./의사결정.pdf" \
+n
   -F "purpose=경영진 의사결정" \
   -F "audience=CEO/임원" \
   -F "tone=데이터 중심" \
@@ -165,6 +174,7 @@ curl -X POST "http://127.0.0.1:8000/v1/process" \
 > `의사결정.pdf`는 서버 폴더에 미리 넣지 않아도 됩니다. 위 커맨드를 실행하는 위치 기준 상대경로(또는 절대경로)로 전달하면 업로드됩니다.
 
 ## 6) 다음 확장 포인트
+
 - OCR 파이프라인 추가 (스캔 PDF 대응)
 - 벡터DB 기반 문서 chunk 검색 + 근거 추적 강화
 - 템플릿 기반 디자인(theme, brand kit) 적용
