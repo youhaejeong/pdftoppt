@@ -1,0 +1,14 @@
+[발표 목적]
+{purpose}
+
+[청중]
+{audience}
+
+[톤앤매너]
+{tone}
+
+[요청 슬라이드 수]
+{slide_count}
+
+[요구사항 JSON]
+{requirements_json}
