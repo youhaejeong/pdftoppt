@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from openai import OpenAI
 
@@ -14,7 +14,10 @@ from app.schemas import (
     SlideOutline,
 )
 
-SYSTEM_PROMPT_PATH = "app/prompts/system_prompt.txt"
+REQUIREMENTS_SYSTEM_PROMPT_PATH = "app/prompts/requirements_system_prompt.txt"
+REQUIREMENTS_USER_PROMPT_TEMPLATE_PATH = "app/prompts/requirements_user_prompt_template.txt"
+PPT_SYSTEM_PROMPT_PATH = "app/prompts/ppt_system_prompt.txt"
+PPT_USER_PROMPT_TEMPLATE_PATH = "app/prompts/ppt_user_prompt_template.txt"
 logger = logging.getLogger(__name__)
 
 
@@ -65,15 +68,54 @@ class LLMService:
         tone: str,
         slide_count: int,
     ) -> PipelineResult:
-        with open(SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
-            system_prompt = f.read()
+        requirements = self._call_requirements_analysis(
+            text=text,
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+        )
+        ppt_outline = self._call_ppt_outline(
+            requirements=requirements,
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+            slide_count=slide_count,
+        )
 
-        user_prompt = (
-            f"[발표 목적]\n{purpose}\n\n"
-            f"[청중]\n{audience}\n\n"
-            f"[톤앤매너]\n{tone}\n\n"
-            f"[분량]\n{slide_count}\n\n"
-            f"[PDF 추출 텍스트]\n{text[:120000]}"
+        return PipelineResult(
+            document_summary=DocumentSummary(
+                title="PDF 기반 요구사항 분석",
+                type="report",
+                purpose=purpose,
+                audience=audience,
+                key_takeaways=self._summarize_requirements(requirements),
+            ),
+            requirements=requirements,
+            ppt_outline=ppt_outline,
+            open_questions=[
+                "최종 발표 대상의 의사결정 포인트는 무엇인가?",
+                "필수 포함해야 할 KPI/정량 지표가 있는가?",
+                "우선순위가 가장 높은 요구사항 3개는 무엇인가?",
+            ],
+        )
+
+    def _call_requirements_analysis(
+        self,
+        text: str,
+        purpose: str,
+        audience: str,
+        tone: str,
+    ) -> Requirements:
+        with open(REQUIREMENTS_SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
+            system_prompt = f.read()
+        with open(REQUIREMENTS_USER_PROMPT_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
+
+        user_prompt = user_prompt_template.format(
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+            text=text[:120000],
         )
 
         resp = self.client.chat.completions.create(
@@ -87,7 +129,99 @@ class LLMService:
         )
         content = resp.choices[0].message.content
         data = json.loads(content)
-        return PipelineResult.model_validate(data)
+        return self._normalize_requirements(data)
+
+    def _call_ppt_outline(
+        self,
+        requirements: Requirements,
+        purpose: str,
+        audience: str,
+        tone: str,
+        slide_count: int,
+    ) -> List[SlideOutline]:
+        with open(PPT_SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
+            system_prompt = f.read()
+        with open(PPT_USER_PROMPT_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
+
+        requirements_payload = self._requirements_to_prompt_payload(requirements)
+        user_prompt = user_prompt_template.format(
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+            slide_count=slide_count,
+            requirements_json=json.dumps(requirements_payload, ensure_ascii=False, indent=2),
+        )
+
+        resp = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.2,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        content = resp.choices[0].message.content
+        data = json.loads(content)
+        outlines = data.get("ppt_outline", [])
+        return [SlideOutline.model_validate(item) for item in outlines]
+
+    def _normalize_requirements(self, data: Dict) -> Requirements:
+        by_category = {
+            "functional": [],
+            "non_functional": [],
+            "operations": [],
+            "integrations": [],
+            "security": [],
+            "constraints": [],
+            "timeline": [],
+            "risks": [],
+        }
+
+        for item in data.get("requirements", []):
+            category = str(item.get("category", "")).strip().lower()
+            if category not in by_category:
+                continue
+            by_category[category].append(
+                RequirementItem(
+                    id=str(item.get("id", "")).strip() or f"{category[:2].upper()}-{len(by_category[category]) + 1}",
+                    text=str(item.get("requirement", "")).strip() or str(item.get("text", "")).strip(),
+                    priority=self._normalize_priority(str(item.get("priority", "medium"))),
+                    evidence=str(item.get("evidence", "")).strip(),
+                )
+            )
+
+        return Requirements(**by_category)
+
+    def _requirements_to_prompt_payload(self, requirements: Requirements) -> Dict[str, List[Dict[str, str]]]:
+        return {
+            "functional": [item.model_dump() for item in requirements.functional],
+            "non_functional": [item.model_dump() for item in requirements.non_functional],
+            "operations": [item.model_dump() for item in requirements.operations],
+            "integrations": [item.model_dump() for item in requirements.integrations],
+            "security": [item.model_dump() for item in requirements.security],
+            "constraints": [item.model_dump() for item in requirements.constraints],
+            "timeline": [item.model_dump() for item in requirements.timeline],
+            "risks": [item.model_dump() for item in requirements.risks],
+        }
+
+    def _summarize_requirements(self, requirements: Requirements) -> List[str]:
+        highlights: List[str] = []
+        for category_name, items in self._requirements_to_prompt_payload(requirements).items():
+            if items:
+                highlights.append(f"{category_name}: {items[0]['text'][:60]}")
+            if len(highlights) >= 5:
+                break
+        return highlights or ["요구사항 분석 결과 요약 필요"]
+
+    def _normalize_priority(self, priority: str) -> str:
+        normalized = priority.strip().lower()
+        if normalized in {"high", "h"}:
+            return "High"
+        if normalized in {"low", "l"}:
+            return "Low"
+        return "Med"
 
     def _fallback(
         self,
@@ -106,13 +240,31 @@ class LLMService:
             priority="High",
         )
         non_functional = self._build_requirement_items(
-            lines=self._pick_lines(source_lines, ["성능", "보안", "안정", "품질", "응답시간"]),
+            lines=self._pick_lines(source_lines, ["성능", "안정", "품질", "응답시간"]),
             prefix="NF",
-            fallback=["비기능 요구사항(성능/보안/운영) 정의 필요"],
+            fallback=["비기능 요구사항(성능/운영) 정의 필요"],
             priority="Med",
         )
+        operations = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["운영", "장애", "모니터링", "지원"]),
+            prefix="OP",
+            fallback=["운영 요구사항(관제/장애대응/SLA) 정의 필요"],
+            priority="Med",
+        )
+        integrations = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["연계", "외부", "내부 시스템", "API"]),
+            prefix="IN",
+            fallback=["연계 시스템 요구사항 및 인터페이스 정의 필요"],
+            priority="Med",
+        )
+        security = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["보안", "암호화", "인증", "권한", "준수"]),
+            prefix="S",
+            fallback=["보안/컴플라이언스 요구사항 확인 필요"],
+            priority="High",
+        )
         constraints = self._build_requirement_items(
-            lines=self._pick_lines(source_lines, ["제약", "예산", "범위", "필수", "준수"]),
+            lines=self._pick_lines(source_lines, ["제약", "예산", "범위", "필수"]),
             prefix="C",
             fallback=["예산/범위/정책 제약사항 확인 필요"],
             priority="Med",
@@ -143,6 +295,9 @@ class LLMService:
             requirements=Requirements(
                 functional=functional,
                 non_functional=non_functional,
+                operations=operations,
+                integrations=integrations,
+                security=security,
                 constraints=constraints,
                 timeline=timeline,
                 risks=risks,

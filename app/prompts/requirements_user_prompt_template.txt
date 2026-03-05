@@ -1,0 +1,11 @@
+[발표 목적]
+{purpose}
+
+[청중]
+{audience}
+
+[톤앤매너]
+{tone}
+
+[RFP 원문]
+{text}
