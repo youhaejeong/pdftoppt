@@ -37,7 +37,6 @@ def test_home_page_uses_valid_backslash_normalizer():
     client = TestClient(app)
     resp = client.get('/')
     assert resp.status_code == 200
-
     assert "replace(/\\/g, '/')" in resp.text
 
 
@@ -60,4 +59,3 @@ def test_chrome_devtools_probe_returns_204():
     client = TestClient(app)
     resp = client.get('/.well-known/appspecific/com.chrome.devtools.json')
     assert resp.status_code == 204
-

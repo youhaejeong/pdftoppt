@@ -32,7 +32,6 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-
 ## 2-1) Docker Compose로 한 번에 실행
 
 ```bash
@@ -42,7 +41,6 @@ docker compose up --build
 실행 후 접속:
 
 - 웹 업로드 화면: `http://127.0.0.1:8000`
-
 - API 서버: `http://127.0.0.1:8000`
 - Swagger UI: `http://127.0.0.1:8000/docs`
 
@@ -120,7 +118,6 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
     ],
     "open_questions": ["..."]
   },
-
   "output_ppt_path": "outputs/<uuid>.pptx",
   "llm_meta": {
     "mode": "openai",
@@ -139,7 +136,6 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 
 **Path Params**
 - `file_name`: `outputs` 폴더 내 파일명 (`<uuid>.pptx`)
-
   - 예: `output_ppt_path`가 `outputs/abc.pptx`면 다운로드 URL은 `/v1/download/abc.pptx`
 
 **Response 200**
@@ -153,7 +149,6 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 - 업로드 폼은 기본 페이지 이동을 막도록 구성되어, 버튼 클릭 시 `/?pdf_file=...`로 새로고침되지 않아야 정상입니다.
 - 브라우저 캐시로 구버전 화면이 남는 문제를 줄이기 위해, `/` 응답은 no-cache 헤더로 제공됩니다.
 
-
 > 만약 주소창에 `/?pdf_file=...` 같은 GET 쿼리가 보이면 브라우저 캐시를 비우고 새로고침 후 다시 시도하세요(최신 스크립트에서 업로드 후 링크가 바로 생성됩니다).
 
 ## 5) cURL 예시
@@ -164,7 +159,6 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 ```bash
 curl -X POST "http://127.0.0.1:8000/v1/process" \
   -F "pdf_file=@./의사결정.pdf" \
-n
   -F "purpose=경영진 의사결정" \
   -F "audience=CEO/임원" \
   -F "tone=데이터 중심" \

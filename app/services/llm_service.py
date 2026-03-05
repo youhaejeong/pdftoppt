@@ -3,14 +3,11 @@ import logging
 import os
 from typing import List, Optional, Tuple
 
-
 from openai import OpenAI
 
 from app.schemas import (
     DocumentSummary,
-
     LLMRunMeta,
-
     PipelineResult,
     RequirementItem,
     Requirements,
@@ -20,6 +17,7 @@ from app.schemas import (
 SYSTEM_PROMPT_PATH = "app/prompts/system_prompt.txt"
 
 logger = logging.getLogger(__name__)
+
 class LLMService:
     def __init__(self) -> None:
         api_key = os.getenv("OPENAI_API_KEY")
@@ -32,7 +30,6 @@ class LLMService:
         audience: str,
         tone: str,
         slide_count: int,
-
     ) -> Tuple[PipelineResult, LLMRunMeta]:
         if self.client:
             try:
@@ -59,7 +56,6 @@ class LLMService:
                 error_message="OPENAI_API_KEY is not set",
             ),
         )
-
 
     def _call_openai(
         self,
@@ -137,7 +133,6 @@ class LLMService:
 
         outlines = self._build_outline_from_source(source_lines, slide_count)
 
-
         return PipelineResult(
             document_summary=DocumentSummary(
                 title="PDF 기반 요구사항 분석",
@@ -149,7 +144,6 @@ class LLMService:
             requirements=Requirements(
                 functional=functional,
                 non_functional=non_functional,
-
                 constraints=constraints,
                 timeline=timeline,
                 risks=risks,
