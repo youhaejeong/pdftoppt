@@ -10,7 +10,8 @@ pdftoppt/
 │   ├── main.py                    # FastAPI 엔트리포인트
 │   ├── schemas.py                 # 요청/응답 및 도메인 스키마
 │   ├── prompts/
-│   │   └── system_prompt.txt      # LLM 시스템 프롬프트
+│   │   ├── system_prompt.txt      # LLM 시스템 프롬프트
+│   │   └── user_prompt_template.txt # LLM 유저 프롬프트 템플릿
 │   └── services/
 │       ├── pdf_parser.py          # PDF 텍스트 추출(PyMuPDF)
 │       ├── llm_service.py         # OpenAI 호출 + fallback 생성

@@ -15,6 +15,7 @@ from app.schemas import (
 )
 
 SYSTEM_PROMPT_PATH = "app/prompts/system_prompt.txt"
+USER_PROMPT_TEMPLATE_PATH = "app/prompts/user_prompt_template.txt"
 logger = logging.getLogger(__name__)
 
 
@@ -67,13 +68,15 @@ class LLMService:
     ) -> PipelineResult:
         with open(SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
             system_prompt = f.read()
+        with open(USER_PROMPT_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
 
-        user_prompt = (
-            f"[발표 목적]\n{purpose}\n\n"
-            f"[청중]\n{audience}\n\n"
-            f"[톤앤매너]\n{tone}\n\n"
-            f"[분량]\n{slide_count}\n\n"
-            f"[PDF 추출 텍스트]\n{text[:120000]}"
+        user_prompt = user_prompt_template.format(
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+            slide_count=slide_count,
+            text=text[:120000],
         )
 
         resp = self.client.chat.completions.create(
