@@ -1,5 +1,4 @@
-
-from typing import List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -36,6 +35,7 @@ class SlideOutline(BaseModel):
     objective: str
     key_points: List[str]
     visual_type: str
+    layout: Dict[str, Any] = Field(default_factory=dict)
     speaker_note: str
 
 
