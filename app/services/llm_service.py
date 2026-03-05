@@ -15,8 +15,8 @@ from app.schemas import (
 )
 
 SYSTEM_PROMPT_PATH = "app/prompts/system_prompt.txt"
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 class LLMService:
     def __init__(self) -> None:
@@ -96,6 +96,7 @@ class LLMService:
         audience: str,
         slide_count: int,
     ) -> PipelineResult:
+
         source_lines = self._extract_source_lines(text)
         key_takeaways = source_lines[: min(5, len(source_lines))] or ["문서 핵심 내용 파악 필요"]
 
@@ -146,6 +147,7 @@ class LLMService:
                 constraints=constraints,
                 timeline=timeline,
                 risks=risks,
+
             ),
             ppt_outline=outlines,
             open_questions=[
@@ -192,6 +194,7 @@ class LLMService:
         if not lines:
             lines = ["문서에서 유의미한 본문을 찾지 못했습니다."]
 
+
         proposal_sections = [
             ("제안 개요", "고객 배경과 제안 목적 정리", "비교"),
             ("클라이언트 요구사항 요약", "핵심 요구사항을 우선순위로 정리", "표"),
@@ -210,10 +213,12 @@ class LLMService:
             "웹/모바일/백엔드/데이터 연계 통합 구축",
             "레거시 연동 및 단계적 전환(무중단/저위험) 지원",
             "운영 안정화·고도화 및 SLA 기반 기술지원",
+
         ]
 
         outlines: List[SlideOutline] = []
         for i in range(1, slide_count + 1):
+
             section_title, objective, visual = proposal_sections[(i - 1) % len(proposal_sections)]
             start_idx = (i - 1) * 3
             points: List[str] = []
@@ -246,7 +251,9 @@ class LLMService:
                     key_points=points,
                     visual_type=visual,
                     speaker_note=f"문서 근거 기반 제안. 참고 문장: {note_evidence}",
+
                 )
             )
 
         return outlines
+
