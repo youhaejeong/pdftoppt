@@ -269,6 +269,18 @@ class LLMService:
             priority="High",
             proposal_template="보안통제(인증/권한/감사로그)와 컴플라이언스 점검을 병행한다: {line}",
         )
+        integrations = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["연계", "외부", "내부 시스템", "API"]),
+            prefix="IN",
+            fallback=["연계 시스템 요구사항 및 인터페이스 정의 필요"],
+            priority="Med",
+        )
+        security = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["보안", "암호화", "인증", "권한", "준수"]),
+            prefix="S",
+            fallback=["보안/컴플라이언스 요구사항 확인 필요"],
+            priority="High",
+        )
         constraints = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["제약", "예산", "범위", "필수"]),
             prefix="C",
