@@ -81,26 +81,29 @@ def home() -> HTMLResponse:
 
         const data = await response.json();
         if (!response.ok) {
-          result.textContent = `오류: ${data.detail || '요청 실패'}`;
+
+          result.textContent =  "오류: " + (data.detail || "요청 실패");
+
           return;
         }
 
         const rawPath = data.output_ppt_path || '';
-        const normalized = rawPath.replace(/\\/g, '/');
+
+        const normalized = rawPath.split('\\\\').join('/');
+
         const fileName = normalized.split('/').pop();
         const downloadUrl = `/v1/download/${encodeURIComponent(fileName)}`;
 
         const modeText = data.llm_meta?.mode || 'unknown';
         const errText = data.llm_meta?.error_message ? `<br/>LLM fallback 사유: ${data.llm_meta.error_message}` : '';
 
-        result.innerHTML = `
-          <strong>완료!</strong><br/>
-          생성 파일: ${data.output_ppt_path}<br/>
-          생성 모드: ${modeText}${errText}<br/>
-          <a href="${downloadUrl}">PPT 다운로드</a>
-        `;
+
+        result.innerHTML =
+          "<strong>완료!</strong><br/>" +
+          "생성 파일: " + data.output_ppt_path + "<br/>" +
+          '<a href="' + downloadUrl + '">PPT 다운로드</a>';
       } catch (err) {
-        result.textContent = `오류: ${err.message}`;
+        result.textContent = "오류: " + err.message;
       }
     };
 
@@ -159,6 +162,7 @@ async def process_pdf(
         raise HTTPException(status_code=400, detail="PDF에서 텍스트를 추출하지 못했습니다.")
 
     result, llm_meta = llm_service.build_result(
+
         text=text,
         purpose=purpose,
         audience=audience,
