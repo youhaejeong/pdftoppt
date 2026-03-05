@@ -89,7 +89,7 @@ def home() -> HTMLResponse:
 
         const rawPath = data.output_ppt_path || '';
 
-        const normalized = rawPath.split('\\\\').join('/');
+        const normalized = rawPath.replace(/\/g, '/');
 
         const fileName = normalized.split('/').pop();
         const downloadUrl = `/v1/download/${encodeURIComponent(fileName)}`;

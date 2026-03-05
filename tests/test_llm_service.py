@@ -17,11 +17,13 @@ def test_fallback_generates_varied_slide_points():
     assert len(result.ppt_outline) == 4
     assert isinstance(result.ppt_outline[0].layout, dict)
 
-    # fallback일 때는 슬라이드별 포인트가 동일 고정 문구가 아니어야 함
     if meta.mode == "fallback":
         slide1 = result.ppt_outline[0].key_points
         slide2 = result.ppt_outline[1].key_points
         assert slide1 != slide2
+        assert result.requirements.operations
+        assert result.requirements.integrations
+        assert result.requirements.security
 
 
 def test_fallback_uses_prompt_visual_type_values():
@@ -49,22 +51,31 @@ def test_fallback_uses_prompt_visual_type_values():
             assert slide.visual_type in allowed_visuals
 
 
-def test_openai_call_uses_user_prompt_template_file():
+def test_openai_call_uses_split_prompts_and_merges_results():
     class DummyResponse:
-        class Choice:
-            class Message:
-                content = '{"document_summary":{"title":"t","type":"report","purpose":"p","audience":"a","key_takeaways":["k"]},"requirements":{"functional":[],"non_functional":[],"constraints":[],"timeline":[],"risks":[]},"ppt_outline":[],"open_questions":[]}'
+        def __init__(self, content: str):
+            class Choice:
+                class Message:
+                    pass
 
-            message = Message()
+                message = Message()
 
-        choices = [Choice()]
+            choice = Choice()
+            choice.message.content = content
+            self.choices = [choice]
 
-    captured = {}
+    captured_messages = []
 
     class DummyCompletions:
         def create(self, **kwargs):
-            captured.update(kwargs)
-            return DummyResponse()
+            captured_messages.append(kwargs["messages"])
+            if len(captured_messages) == 1:
+                return DummyResponse(
+                    '{"requirements":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","priority":"high","evidence":"기능 요구사항"}]}'
+                )
+            return DummyResponse(
+                '{"ppt_outline":[{"slide_no":1,"title":"요구사항 개요","objective":"핵심 요구 정리","key_points":["핵심 업무기능 제공"],"visual_type":"table","layout":{"type":"table","columns":["항목"],"rows":[["기능"]]},"speaker_note":"요구사항 기반 설명"}]}'
+            )
 
     class DummyChat:
         completions = DummyCompletions()
@@ -75,7 +86,7 @@ def test_openai_call_uses_user_prompt_template_file():
     svc = LLMService()
     svc.client = DummyClient()
 
-    svc._call_openai(
+    result = svc._call_openai(
         text="본문 텍스트",
         purpose="의사결정",
         audience="임원",
@@ -83,12 +94,15 @@ def test_openai_call_uses_user_prompt_template_file():
         slide_count=7,
     )
 
-    user_message = captured["messages"][1]["content"]
-    assert "[발표 목적]" in user_message
-    assert "의사결정" in user_message
-    assert "[청중]" in user_message
-    assert "임원" in user_message
-    assert "[톤앤매너]" in user_message
-    assert "데이터 중심" in user_message
-    assert "[분량]" in user_message
-    assert "7" in user_message
+    assert len(captured_messages) == 2
+
+    requirements_user_message = captured_messages[0][1]["content"]
+    ppt_user_message = captured_messages[1][1]["content"]
+
+    assert "[RFP 원문]" in requirements_user_message
+    assert "본문 텍스트" in requirements_user_message
+    assert "[요구사항 JSON]" in ppt_user_message
+    assert "핵심 업무기능 제공" in ppt_user_message
+
+    assert result.requirements.functional[0].priority == "High"
+    assert result.ppt_outline[0].visual_type == "table"
