@@ -47,3 +47,48 @@ def test_fallback_uses_prompt_visual_type_values():
         }
         for slide in result.ppt_outline:
             assert slide.visual_type in allowed_visuals
+
+
+def test_openai_call_uses_user_prompt_template_file():
+    class DummyResponse:
+        class Choice:
+            class Message:
+                content = '{"document_summary":{"title":"t","type":"report","purpose":"p","audience":"a","key_takeaways":["k"]},"requirements":{"functional":[],"non_functional":[],"constraints":[],"timeline":[],"risks":[]},"ppt_outline":[],"open_questions":[]}'
+
+            message = Message()
+
+        choices = [Choice()]
+
+    captured = {}
+
+    class DummyCompletions:
+        def create(self, **kwargs):
+            captured.update(kwargs)
+            return DummyResponse()
+
+    class DummyChat:
+        completions = DummyCompletions()
+
+    class DummyClient:
+        chat = DummyChat()
+
+    svc = LLMService()
+    svc.client = DummyClient()
+
+    svc._call_openai(
+        text="본문 텍스트",
+        purpose="의사결정",
+        audience="임원",
+        tone="데이터 중심",
+        slide_count=7,
+    )
+
+    user_message = captured["messages"][1]["content"]
+    assert "[발표 목적]" in user_message
+    assert "의사결정" in user_message
+    assert "[청중]" in user_message
+    assert "임원" in user_message
+    assert "[톤앤매너]" in user_message
+    assert "데이터 중심" in user_message
+    assert "[분량]" in user_message
+    assert "7" in user_message
