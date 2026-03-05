@@ -1,0 +1,14 @@
+services:
+  pdftoppt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pdftoppt-api
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    volumes:
+      - ./outputs:/app/outputs
+      - ./uploads:/app/uploads
+    restart: unless-stopped
