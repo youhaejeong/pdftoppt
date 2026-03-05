@@ -9,6 +9,7 @@ Priority = Literal["High", "Med", "Low"]
 class RequirementItem(BaseModel):
     id: str
     text: str
+    proposal: str = ""
     priority: Priority
     evidence: str = ""
 

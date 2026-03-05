@@ -187,6 +187,7 @@ class LLMService:
                 RequirementItem(
                     id=str(item.get("id", "")).strip() or f"{category[:2].upper()}-{len(by_category[category]) + 1}",
                     text=str(item.get("requirement", "")).strip() or str(item.get("text", "")).strip(),
+                    proposal=str(item.get("proposal", "")).strip(),
                     priority=self._normalize_priority(str(item.get("priority", "medium"))),
                     evidence=str(item.get("evidence", "")).strip(),
                 )
@@ -238,18 +239,35 @@ class LLMService:
             prefix="F",
             fallback=["문서 기반 기능 요구사항 상세 정의 필요"],
             priority="High",
+            proposal_template="핵심 기능을 표준 아키텍처로 구현하고 검증 시나리오로 품질을 보장한다: {line}",
         )
         non_functional = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["성능", "안정", "품질", "응답시간"]),
             prefix="NF",
             fallback=["비기능 요구사항(성능/운영) 정의 필요"],
             priority="Med",
+            proposal_template="SLA/KPI 기준을 정의하고 운영 표준 절차로 관리한다: {line}",
         )
         operations = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["운영", "장애", "모니터링", "지원"]),
             prefix="OP",
             fallback=["운영 요구사항(관제/장애대응/SLA) 정의 필요"],
             priority="Med",
+            proposal_template="24x365 운영조직과 장애대응 프로세스를 적용한다: {line}",
+        )
+        integrations = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["연계", "외부", "내부 시스템", "API"]),
+            prefix="IN",
+            fallback=["연계 시스템 요구사항 및 인터페이스 정의 필요"],
+            priority="Med",
+            proposal_template="연계 인터페이스 표준 및 전구간 모니터링을 적용한다: {line}",
+        )
+        security = self._build_requirement_items(
+            lines=self._pick_lines(source_lines, ["보안", "암호화", "인증", "권한", "준수"]),
+            prefix="S",
+            fallback=["보안/컴플라이언스 요구사항 확인 필요"],
+            priority="High",
+            proposal_template="보안통제(인증/권한/감사로그)와 컴플라이언스 점검을 병행한다: {line}",
         )
         integrations = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["연계", "외부", "내부 시스템", "API"]),
@@ -268,18 +286,21 @@ class LLMService:
             prefix="C",
             fallback=["예산/범위/정책 제약사항 확인 필요"],
             priority="Med",
+            proposal_template="제약조건을 반영한 단계별 범위/변경 통제 계획을 수립한다: {line}",
         )
         timeline = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["일정", "기간", "단계", "마감", "월", "주"]),
             prefix="T",
             fallback=["주요 마일스톤 일정 정의 필요"],
             priority="Med",
+            proposal_template="마일스톤 중심 수행계획과 점검 게이트를 운영한다: {line}",
         )
         risks = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["리스크", "위험", "문제", "이슈", "지연"]),
             prefix="R",
             fallback=["핵심 리스크 식별 및 대응 계획 수립 필요"],
             priority="Med",
+            proposal_template="리스크별 예방/대응/복구 시나리오를 수립한다: {line}",
         )
 
         outlines = self._build_outline_from_source(source_lines, slide_count)
@@ -329,6 +350,7 @@ class LLMService:
         prefix: str,
         fallback: List[str],
         priority: str,
+        proposal_template: str,
     ) -> List[RequirementItem]:
         base = lines if lines else fallback
         items: List[RequirementItem] = []
@@ -337,6 +359,7 @@ class LLMService:
                 RequirementItem(
                     id=f"{prefix}-{idx}",
                     text=line,
+                    proposal=proposal_template.format(line=line),
                     priority=priority,
                     evidence=line,
                 )

@@ -71,7 +71,7 @@ def test_openai_call_uses_split_prompts_and_merges_results():
             captured_messages.append(kwargs["messages"])
             if len(captured_messages) == 1:
                 return DummyResponse(
-                    '{"requirements":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","priority":"high","evidence":"기능 요구사항"}]}'
+                    '{"requirements":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","proposal":"표준 아키텍처로 구축","priority":"high","evidence":"기능 요구사항"}]}'
                 )
             return DummyResponse(
                 '{"ppt_outline":[{"slide_no":1,"title":"요구사항 개요","objective":"핵심 요구 정리","key_points":["핵심 업무기능 제공"],"visual_type":"table","layout":{"type":"table","columns":["항목"],"rows":[["기능"]]},"speaker_note":"요구사항 기반 설명"}]}'
@@ -103,6 +103,8 @@ def test_openai_call_uses_split_prompts_and_merges_results():
     assert "본문 텍스트" in requirements_user_message
     assert "[요구사항 JSON]" in ppt_user_message
     assert "핵심 업무기능 제공" in ppt_user_message
+    assert "표준 아키텍처로 구축" in ppt_user_message
 
     assert result.requirements.functional[0].priority == "High"
+    assert result.requirements.functional[0].proposal == "표준 아키텍처로 구축"
     assert result.ppt_outline[0].visual_type == "table"
