@@ -90,7 +90,7 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 - `purpose` (string, optional, default: `내부 공유`): 발표 목적
 - `audience` (string, optional, default: `팀 리더`): 청중
 - `tone` (string, optional, default: `공식적`): 톤앤매너
-- `slide_count` (int, optional, default: `10`): 슬라이드 수
+- `slide_count` (int, optional, default: `10`): 슬라이드 수 (`10`~`50`)
 
 **Response 200 (요약)**
 ```json

@@ -55,7 +55,7 @@ def home() -> HTMLResponse:
       <input id="tone" name="tone" type="text" value="공식적" />
 
       <label for="slide_count">슬라이드 수</label>
-      <input id="slide_count" name="slide_count" type="number" value="10" min="1" max="30" />
+      <input id="slide_count" name="slide_count" type="number" value="10" min="10" max="50" />
 
       <button id="generate-btn" type="button">PPT 생성하기</button>
     </form>
@@ -149,6 +149,9 @@ async def process_pdf(
 ) -> ProcessResponse:
     if not pdf_file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="PDF 파일만 업로드 가능합니다.")
+
+    if slide_count < 10 or slide_count > 50:
+        raise HTTPException(status_code=400, detail="slide_count는 10 이상 50 이하만 가능합니다.")
 
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     file_id = uuid4().hex
