@@ -16,6 +16,8 @@ from app.schemas import (
 
 REQUIREMENTS_SYSTEM_PROMPT_PATH = "app/prompts/requirements_system_prompt.txt"
 REQUIREMENTS_USER_PROMPT_TEMPLATE_PATH = "app/prompts/requirements_user_prompt_template.txt"
+PROPOSAL_SYSTEM_PROMPT_PATH = "app/prompts/proposal_system_prompt.txt"
+PROPOSAL_USER_PROMPT_TEMPLATE_PATH = "app/prompts/proposal_user_prompt_template.txt"
 PPT_SYSTEM_PROMPT_PATH = "app/prompts/ppt_system_prompt.txt"
 PPT_USER_PROMPT_TEMPLATE_PATH = "app/prompts/ppt_user_prompt_template.txt"
 logger = logging.getLogger(__name__)
@@ -68,14 +70,20 @@ class LLMService:
         tone: str,
         slide_count: int,
     ) -> PipelineResult:
-        requirements = self._call_requirements_analysis(
+        extracted_requirements = self._call_requirements_analysis(
             text=text,
             purpose=purpose,
             audience=audience,
             tone=tone,
         )
+        analyzed_requirements = self._call_proposal_analysis(
+            requirements=extracted_requirements,
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+        )
         ppt_outline = self._call_ppt_outline(
-            requirements=requirements,
+            requirements=analyzed_requirements,
             purpose=purpose,
             audience=audience,
             tone=tone,
@@ -88,9 +96,9 @@ class LLMService:
                 type="report",
                 purpose=purpose,
                 audience=audience,
-                key_takeaways=self._summarize_requirements(requirements),
+                key_takeaways=self._summarize_requirements(analyzed_requirements),
             ),
-            requirements=requirements,
+            requirements=analyzed_requirements,
             ppt_outline=ppt_outline,
             open_questions=[
                 "최종 발표 대상의 의사결정 포인트는 무엇인가?",
@@ -116,6 +124,39 @@ class LLMService:
             audience=audience,
             tone=tone,
             text=text[:120000],
+        )
+
+        resp = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.2,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        content = resp.choices[0].message.content
+        data = json.loads(content)
+        return self._normalize_requirements(data)
+
+    def _call_proposal_analysis(
+        self,
+        requirements: Requirements,
+        purpose: str,
+        audience: str,
+        tone: str,
+    ) -> Requirements:
+        with open(PROPOSAL_SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
+            system_prompt = f.read()
+        with open(PROPOSAL_USER_PROMPT_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
+
+        requirements_payload = self._requirements_to_prompt_payload(requirements)
+        user_prompt = user_prompt_template.format(
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+            requirements_json=json.dumps(requirements_payload, ensure_ascii=False, indent=2),
         )
 
         resp = self.client.chat.completions.create(
@@ -268,18 +309,6 @@ class LLMService:
             fallback=["보안/컴플라이언스 요구사항 확인 필요"],
             priority="High",
             proposal_template="보안통제(인증/권한/감사로그)와 컴플라이언스 점검을 병행한다: {line}",
-        )
-        integrations = self._build_requirement_items(
-            lines=self._pick_lines(source_lines, ["연계", "외부", "내부 시스템", "API"]),
-            prefix="IN",
-            fallback=["연계 시스템 요구사항 및 인터페이스 정의 필요"],
-            priority="Med",
-        )
-        security = self._build_requirement_items(
-            lines=self._pick_lines(source_lines, ["보안", "암호화", "인증", "권한", "준수"]),
-            prefix="S",
-            fallback=["보안/컴플라이언스 요구사항 확인 필요"],
-            priority="High",
         )
         constraints = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["제약", "예산", "범위", "필수"]),

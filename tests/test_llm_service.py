@@ -71,6 +71,10 @@ def test_openai_call_uses_split_prompts_and_merges_results():
             captured_messages.append(kwargs["messages"])
             if len(captured_messages) == 1:
                 return DummyResponse(
+                    '{"requirements":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","proposal":"","priority":"high","evidence":"기능 요구사항"}]}'
+                )
+            if len(captured_messages) == 2:
+                return DummyResponse(
                     '{"requirements":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","proposal":"표준 아키텍처로 구축","priority":"high","evidence":"기능 요구사항"}]}'
                 )
             return DummyResponse(
@@ -94,13 +98,15 @@ def test_openai_call_uses_split_prompts_and_merges_results():
         slide_count=7,
     )
 
-    assert len(captured_messages) == 2
+    assert len(captured_messages) == 3
 
     requirements_user_message = captured_messages[0][1]["content"]
-    ppt_user_message = captured_messages[1][1]["content"]
+    proposal_user_message = captured_messages[1][1]["content"]
+    ppt_user_message = captured_messages[2][1]["content"]
 
     assert "[RFP 원문]" in requirements_user_message
     assert "본문 텍스트" in requirements_user_message
+    assert "[고객 요구사항 JSON]" in proposal_user_message
     assert "[요구사항 JSON]" in ppt_user_message
     assert "핵심 업무기능 제공" in ppt_user_message
     assert "표준 아키텍처로 구축" in ppt_user_message
