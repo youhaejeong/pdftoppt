@@ -114,3 +114,20 @@ def test_openai_call_uses_split_prompts_and_merges_results():
     assert result.requirements.functional[0].priority == "High"
     assert result.requirements.functional[0].proposal == "표준 아키텍처로 구축"
     assert result.ppt_outline[0].visual_type == "table"
+
+
+def test_fallback_proposal_contains_operational_summary_lines():
+    svc = LLMService()
+    result, meta = svc.build_result(
+        text="운영 요구사항: 홈페이지 무중단 운영 및 장애 대응 체계 필요",
+        purpose="제안 발표",
+        audience="발주처",
+        tone="공식적",
+        slide_count=10,
+    )
+
+    if meta.mode == "fallback":
+        proposal = result.requirements.operations[0].proposal
+        assert "\n" in proposal
+        assert "24x365" in proposal
+        assert "운영총괄" in proposal

@@ -5,12 +5,18 @@
 [목표]
 요구사항을 기반으로 제안 발표 PPT 구조를 설계한다.
 슬라이드는 최소 10장, 최대 50장 범위에서 구성하며 입력 slide_count를 따른다.
+특히 각 requirement의 proposal(2~3줄 요약)을 핵심 콘텐츠로 활용해 슬라이드를 구성한다.
 
 각 슬라이드는 반드시 아래 필드를 포함한다.
 - key_points
 - visual_type
 - layout
 - speaker_note
+
+[작성 원칙]
+- 단순히 고객 요구만 반복하지 말고, proposal에 담긴 운영방식·투입인력·프로세스·SLA를 key_points에 녹인다.
+- 운영/보안/연계 슬라이드는 proposal 내용을 바탕으로 실제 수행 체계가 보이도록 쓴다.
+- 한 슬라이드의 key_points는 요약형이되, 발표자가 바로 설명할 수 있도록 충분히 구체적으로 작성한다.
 
 visual_type은 아래 중 하나만 사용한다.
 - table

@@ -280,56 +280,56 @@ class LLMService:
             prefix="F",
             fallback=["문서 기반 기능 요구사항 상세 정의 필요"],
             priority="High",
-            proposal_template="핵심 기능을 표준 아키텍처로 구현하고 검증 시나리오로 품질을 보장한다: {line}",
+            proposal_template="표준 아키텍처와 모듈 설계 기준을 적용해 기능을 안정적으로 구현한다: {line}\n분석-설계-구현-테스트 산출물을 단계별로 관리하고 핵심 시나리오 기준으로 품질을 검증한다.",
         )
         non_functional = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["성능", "안정", "품질", "응답시간"]),
             prefix="NF",
             fallback=["비기능 요구사항(성능/운영) 정의 필요"],
             priority="Med",
-            proposal_template="SLA/KPI 기준을 정의하고 운영 표준 절차로 관리한다: {line}",
+            proposal_template="성능·가용성·품질 KPI와 목표치를 정의하고 상시 모니터링 체계로 관리한다: {line}\n임계치 초과 시 점검·튜닝·개선 절차를 운영해 서비스 품질을 지속적으로 유지한다.",
         )
         operations = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["운영", "장애", "모니터링", "지원"]),
             prefix="OP",
             fallback=["운영 요구사항(관제/장애대응/SLA) 정의 필요"],
             priority="Med",
-            proposal_template="24x365 운영조직과 장애대응 프로세스를 적용한다: {line}",
+            proposal_template="24x365 상시 관제 체계와 장애 접수-분석-조치-복구 프로세스를 운영해 서비스 연속성을 확보한다: {line}\n운영총괄, 관제, 기술지원 인력을 역할별로 배치하고 장애 등급별 대응 및 복구 목표시간(SLA)을 적용한다.",
         )
         integrations = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["연계", "외부", "내부 시스템", "API"]),
             prefix="IN",
             fallback=["연계 시스템 요구사항 및 인터페이스 정의 필요"],
             priority="Med",
-            proposal_template="연계 인터페이스 표준 및 전구간 모니터링을 적용한다: {line}",
+            proposal_template="연계 인터페이스 표준과 송수신 점검 기준을 수립해 시스템 간 연동 안정성을 확보한다: {line}\n연계 구간별 모니터링과 장애 전파·복구 절차를 운영해 외부 시스템 이슈에 신속히 대응한다.",
         )
         security = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["보안", "암호화", "인증", "권한", "준수"]),
             prefix="S",
             fallback=["보안/컴플라이언스 요구사항 확인 필요"],
             priority="High",
-            proposal_template="보안통제(인증/권한/감사로그)와 컴플라이언스 점검을 병행한다: {line}",
+            proposal_template="인증·권한·암호화·감사로그 중심의 보안통제를 적용해 핵심 정보와 사용자 접근을 관리한다: {line}\n정기 점검과 준수성 검토 체계를 운영해 보안정책 및 컴플라이언스 요구를 지속적으로 충족한다.",
         )
         constraints = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["제약", "예산", "범위", "필수"]),
             prefix="C",
             fallback=["예산/범위/정책 제약사항 확인 필요"],
             priority="Med",
-            proposal_template="제약조건을 반영한 단계별 범위/변경 통제 계획을 수립한다: {line}",
+            proposal_template="예산·범위·정책 제약을 반영한 단계별 추진계획과 우선순위를 수립한다: {line}\n변경관리 기준과 의사결정 절차를 운영해 필수 범위를 안정적으로 통제한다.",
         )
         timeline = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["일정", "기간", "단계", "마감", "월", "주"]),
             prefix="T",
             fallback=["주요 마일스톤 일정 정의 필요"],
             priority="Med",
-            proposal_template="마일스톤 중심 수행계획과 점검 게이트를 운영한다: {line}",
+            proposal_template="마일스톤 중심 수행일정과 단계별 산출물 계획을 수립해 추진현황을 명확히 관리한다: {line}\n착수-분석-구현-검증-전환 구간별 점검 게이트를 운영해 일정 지연을 예방한다.",
         )
         risks = self._build_requirement_items(
             lines=self._pick_lines(source_lines, ["리스크", "위험", "문제", "이슈", "지연"]),
             prefix="R",
             fallback=["핵심 리스크 식별 및 대응 계획 수립 필요"],
             priority="Med",
-            proposal_template="리스크별 예방/대응/복구 시나리오를 수립한다: {line}",
+            proposal_template="주요 리스크별 예방대책과 대응 시나리오를 사전에 정의해 사업 영향도를 최소화한다: {line}\n이슈 발생 시 보고체계와 우회·복구 절차를 즉시 가동할 수 있도록 관리체계를 운영한다.",
         )
 
         outlines = self._build_outline_from_source(source_lines, slide_count)
