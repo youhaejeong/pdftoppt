@@ -140,5 +140,8 @@ def test_prompt_files_include_summary_guidance_for_grouped_messages():
 
     assert "상위 개념으로 묶어 요약" in proposal_prompt
     assert "Marketing DB" in proposal_prompt
+    assert "AI Agent 예시" in proposal_prompt
+    assert "유사 AI 자동화/상품 맵핑 구축 경험" in proposal_prompt
     assert "상위 메시지로 묶어" in ppt_prompt
     assert "리드 수집-분석-세일즈 활용 체계" in ppt_prompt
+    assert "유사 구축 성과/운영 효과" in ppt_prompt
