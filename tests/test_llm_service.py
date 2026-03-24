@@ -1,4 +1,5 @@
 from app.services.llm_service import LLMService
+from pathlib import Path
 
 
 def test_fallback_generates_varied_slide_points():
@@ -131,3 +132,13 @@ def test_fallback_proposal_contains_operational_summary_lines():
         assert "\n" in proposal
         assert "24x365" in proposal
         assert "운영총괄" in proposal
+
+
+def test_prompt_files_include_summary_guidance_for_grouped_messages():
+    proposal_prompt = Path("app/prompts/proposal_system_prompt.txt").read_text(encoding="utf-8")
+    ppt_prompt = Path("app/prompts/ppt_system_prompt.txt").read_text(encoding="utf-8")
+
+    assert "상위 개념으로 묶어 요약" in proposal_prompt
+    assert "Marketing DB" in proposal_prompt
+    assert "상위 메시지로 묶어" in ppt_prompt
+    assert "리드 수집-분석-세일즈 활용 체계" in ppt_prompt
