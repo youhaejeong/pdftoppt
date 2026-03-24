@@ -145,3 +145,25 @@ def test_prompt_files_include_summary_guidance_for_grouped_messages():
     assert "상위 메시지로 묶어" in ppt_prompt
     assert "리드 수집-분석-세일즈 활용 체계" in ppt_prompt
     assert "유사 구축 성과/운영 효과" in ppt_prompt
+
+
+def test_requirements_prompt_focuses_on_task_scope_only():
+    requirements_prompt = Path("app/prompts/requirements_system_prompt.txt").read_text(encoding="utf-8")
+    assert "KPI/정량 목표" in requirements_prompt
+    assert "프로젝트 일정" in requirements_prompt
+    assert '"과업 수행 범위"' in requirements_prompt
+
+
+def test_fallback_excludes_timeline_and_risks_requirements():
+    svc = LLMService()
+    result, meta = svc.build_result(
+        text="프로젝트 일정: 6개월, 리스크: 외부 의존성",
+        purpose="내부 공유",
+        audience="팀",
+        tone="공식적",
+        slide_count=10,
+    )
+
+    if meta.mode == "fallback":
+        assert result.requirements.timeline == []
+        assert result.requirements.risks == []

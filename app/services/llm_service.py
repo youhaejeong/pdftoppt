@@ -317,20 +317,8 @@ class LLMService:
             priority="Med",
             proposal_template="예산·범위·정책 제약을 반영한 단계별 추진계획과 우선순위를 수립한다: {line}\n변경관리 기준과 의사결정 절차를 운영해 필수 범위를 안정적으로 통제한다.",
         )
-        timeline = self._build_requirement_items(
-            lines=self._pick_lines(source_lines, ["일정", "기간", "단계", "마감", "월", "주"]),
-            prefix="T",
-            fallback=["주요 마일스톤 일정 정의 필요"],
-            priority="Med",
-            proposal_template="마일스톤 중심 수행일정과 단계별 산출물 계획을 수립해 추진현황을 명확히 관리한다: {line}\n착수-분석-구현-검증-전환 구간별 점검 게이트를 운영해 일정 지연을 예방한다.",
-        )
-        risks = self._build_requirement_items(
-            lines=self._pick_lines(source_lines, ["리스크", "위험", "문제", "이슈", "지연"]),
-            prefix="R",
-            fallback=["핵심 리스크 식별 및 대응 계획 수립 필요"],
-            priority="Med",
-            proposal_template="주요 리스크별 예방대책과 대응 시나리오를 사전에 정의해 사업 영향도를 최소화한다: {line}\n이슈 발생 시 보고체계와 우회·복구 절차를 즉시 가동할 수 있도록 관리체계를 운영한다.",
-        )
+        timeline: List[RequirementItem] = []
+        risks: List[RequirementItem] = []
 
         outlines = self._build_outline_from_source(source_lines, slide_count)
 
