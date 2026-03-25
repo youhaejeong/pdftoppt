@@ -72,9 +72,13 @@ def test_openai_call_uses_split_prompts_and_merges_results():
             captured_messages.append(kwargs["messages"])
             if len(captured_messages) == 1:
                 return DummyResponse(
-                    '{"requirements":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","proposal":"","priority":"high","evidence":"기능 요구사항"}]}'
+                    '{"task_scope":["홈페이지 무중단 운영","EACO(AI Agent) 기능 관련 Front 개발 및 유지보수 지원"]}'
                 )
             if len(captured_messages) == 2:
+                return DummyResponse(
+                    '{"requirements":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","proposal":"","priority":"high","evidence":"기능 요구사항"}]}'
+                )
+            if len(captured_messages) == 3:
                 return DummyResponse(
                     '{"requirements":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","proposal":"표준 아키텍처로 구축","priority":"high","evidence":"기능 요구사항"}]}'
                 )
@@ -99,14 +103,16 @@ def test_openai_call_uses_split_prompts_and_merges_results():
         slide_count=7,
     )
 
-    assert len(captured_messages) == 3
+    assert len(captured_messages) == 4
 
-    requirements_user_message = captured_messages[0][1]["content"]
-    proposal_user_message = captured_messages[1][1]["content"]
-    ppt_user_message = captured_messages[2][1]["content"]
+    task_scope_user_message = captured_messages[0][1]["content"]
+    requirements_user_message = captured_messages[1][1]["content"]
+    proposal_user_message = captured_messages[2][1]["content"]
+    ppt_user_message = captured_messages[3][1]["content"]
 
-    assert "[RFP 원문]" in requirements_user_message
-    assert "본문 텍스트" in requirements_user_message
+    assert "[RFP 원문]" in task_scope_user_message
+    assert "홈페이지 무중단 운영" in requirements_user_message
+    assert "[과제사항/주요업무 추출 결과]" in requirements_user_message
     assert "[고객 요구사항 JSON]" in proposal_user_message
     assert "[요구사항 JSON]" in ppt_user_message
     assert "핵심 업무기능 제공" in ppt_user_message
@@ -149,9 +155,11 @@ def test_prompt_files_include_summary_guidance_for_grouped_messages():
 
 def test_requirements_prompt_focuses_on_task_scope_only():
     requirements_prompt = Path("app/prompts/requirements_system_prompt.txt").read_text(encoding="utf-8")
+    task_scope_prompt = Path("app/prompts/task_scope_system_prompt.txt").read_text(encoding="utf-8")
     assert "KPI/정량 목표" in requirements_prompt
     assert "프로젝트 일정" in requirements_prompt
     assert '"과업 수행 범위"' in requirements_prompt
+    assert "과제사항과 주요업무만 추출" in task_scope_prompt
 
 
 def test_fallback_excludes_timeline_and_risks_requirements():

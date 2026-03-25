@@ -10,6 +10,8 @@ pdftoppt/
 │   ├── main.py                    # FastAPI 엔트리포인트
 │   ├── schemas.py                 # 요청/응답 및 도메인 스키마
 │   ├── prompts/
+│   │   ├── task_scope_system_prompt.txt        # 과제사항/주요업무 추출 프롬프트
+│   │   ├── task_scope_user_prompt_template.txt # 과제사항/주요업무 추출 유저 프롬프트
 │   │   ├── requirements_system_prompt.txt      # PDF/RFP 요구사항 파악 프롬프트
 │   │   ├── requirements_user_prompt_template.txt # 요구사항 파악 유저 프롬프트
 │   │   ├── proposal_system_prompt.txt          # 제안사 대응전략 분석 프롬프트

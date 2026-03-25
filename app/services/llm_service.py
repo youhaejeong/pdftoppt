@@ -16,6 +16,8 @@ from app.schemas import (
 
 REQUIREMENTS_SYSTEM_PROMPT_PATH = "app/prompts/requirements_system_prompt.txt"
 REQUIREMENTS_USER_PROMPT_TEMPLATE_PATH = "app/prompts/requirements_user_prompt_template.txt"
+TASK_SCOPE_SYSTEM_PROMPT_PATH = "app/prompts/task_scope_system_prompt.txt"
+TASK_SCOPE_USER_PROMPT_TEMPLATE_PATH = "app/prompts/task_scope_user_prompt_template.txt"
 PROPOSAL_SYSTEM_PROMPT_PATH = "app/prompts/proposal_system_prompt.txt"
 PROPOSAL_USER_PROMPT_TEMPLATE_PATH = "app/prompts/proposal_user_prompt_template.txt"
 PPT_SYSTEM_PROMPT_PATH = "app/prompts/ppt_system_prompt.txt"
@@ -70,8 +72,14 @@ class LLMService:
         tone: str,
         slide_count: int,
     ) -> PipelineResult:
-        extracted_requirements = self._call_requirements_analysis(
+        task_scope = self._call_task_scope_analysis(
             text=text,
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+        )
+        extracted_requirements = self._call_requirements_analysis(
+            task_scope=task_scope,
             purpose=purpose,
             audience=audience,
             tone=tone,
@@ -107,9 +115,42 @@ class LLMService:
             ],
         )
 
-    def _call_requirements_analysis(
+    def _call_task_scope_analysis(
         self,
         text: str,
+        purpose: str,
+        audience: str,
+        tone: str,
+    ) -> List[str]:
+        with open(TASK_SCOPE_SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
+            system_prompt = f.read()
+        with open(TASK_SCOPE_USER_PROMPT_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
+
+        user_prompt = user_prompt_template.format(
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+            text=text[:120000],
+        )
+
+        resp = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.2,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        content = resp.choices[0].message.content
+        data = json.loads(content)
+        scopes = [str(item).strip() for item in data.get("task_scope", []) if str(item).strip()]
+        return scopes[:50]
+
+    def _call_requirements_analysis(
+        self,
+        task_scope: List[str],
         purpose: str,
         audience: str,
         tone: str,
@@ -123,7 +164,7 @@ class LLMService:
             purpose=purpose,
             audience=audience,
             tone=tone,
-            text=text[:120000],
+            task_scope_text="\n".join(f"- {item}" for item in task_scope) if task_scope else "- 과제사항 추출 결과 없음",
         )
 
         resp = self.client.chat.completions.create(

@@ -7,5 +7,5 @@
 [톤앤매너]
 {tone}
 
-[과제사항/주요업무 추출 결과]
-{task_scope_text}
+[RFP 원문]
+{text}
