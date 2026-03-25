@@ -18,8 +18,10 @@ REQUIREMENTS_SYSTEM_PROMPT_PATH = "app/prompts/requirements_system_prompt.txt"
 REQUIREMENTS_USER_PROMPT_TEMPLATE_PATH = "app/prompts/requirements_user_prompt_template.txt"
 TASK_SCOPE_SYSTEM_PROMPT_PATH = "app/prompts/task_scope_system_prompt.txt"
 TASK_SCOPE_USER_PROMPT_TEMPLATE_PATH = "app/prompts/task_scope_user_prompt_template.txt"
-PROPOSAL_SYSTEM_PROMPT_PATH = "app/prompts/proposal_system_prompt.txt"
-PROPOSAL_USER_PROMPT_TEMPLATE_PATH = "app/prompts/proposal_user_prompt_template.txt"
+PROPOSAL_FRAMEWORK_SYSTEM_PROMPT_PATH = "app/prompts/proposal_framework_system_prompt.txt"
+PROPOSAL_FRAMEWORK_USER_PROMPT_TEMPLATE_PATH = "app/prompts/proposal_framework_user_prompt_template.txt"
+PROPOSAL_SUMMARY_SYSTEM_PROMPT_PATH = "app/prompts/proposal_summary_system_prompt.txt"
+PROPOSAL_SUMMARY_USER_PROMPT_TEMPLATE_PATH = "app/prompts/proposal_summary_user_prompt_template.txt"
 PPT_SYSTEM_PROMPT_PATH = "app/prompts/ppt_system_prompt.txt"
 PPT_USER_PROMPT_TEMPLATE_PATH = "app/prompts/ppt_user_prompt_template.txt"
 logger = logging.getLogger(__name__)
@@ -84,8 +86,14 @@ class LLMService:
             audience=audience,
             tone=tone,
         )
-        analyzed_requirements = self._call_proposal_analysis(
+        proposal_framework = self._call_proposal_framework_analysis(
             requirements=extracted_requirements,
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+        )
+        analyzed_requirements = self._call_proposal_summary_analysis(
+            proposal_framework=proposal_framework,
             purpose=purpose,
             audience=audience,
             tone=tone,
@@ -180,16 +188,16 @@ class LLMService:
         data = json.loads(content)
         return self._normalize_requirements(data)
 
-    def _call_proposal_analysis(
+    def _call_proposal_framework_analysis(
         self,
         requirements: Requirements,
         purpose: str,
         audience: str,
         tone: str,
-    ) -> Requirements:
-        with open(PROPOSAL_SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
+    ) -> List[Dict]:
+        with open(PROPOSAL_FRAMEWORK_SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
             system_prompt = f.read()
-        with open(PROPOSAL_USER_PROMPT_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+        with open(PROPOSAL_FRAMEWORK_USER_PROMPT_TEMPLATE_PATH, "r", encoding="utf-8") as f:
             user_prompt_template = f.read()
 
         requirements_payload = self._requirements_to_prompt_payload(requirements)
@@ -198,6 +206,39 @@ class LLMService:
             audience=audience,
             tone=tone,
             requirements_json=json.dumps(requirements_payload, ensure_ascii=False, indent=2),
+        )
+
+        resp = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.2,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        content = resp.choices[0].message.content
+        data = json.loads(content)
+        frameworks = data.get("proposal_framework", [])
+        return [item for item in frameworks if isinstance(item, dict)]
+
+    def _call_proposal_summary_analysis(
+        self,
+        proposal_framework: List[Dict],
+        purpose: str,
+        audience: str,
+        tone: str,
+    ) -> Requirements:
+        with open(PROPOSAL_SUMMARY_SYSTEM_PROMPT_PATH, "r", encoding="utf-8") as f:
+            system_prompt = f.read()
+        with open(PROPOSAL_SUMMARY_USER_PROMPT_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            user_prompt_template = f.read()
+
+        user_prompt = user_prompt_template.format(
+            purpose=purpose,
+            audience=audience,
+            tone=tone,
+            proposal_framework_json=json.dumps(proposal_framework, ensure_ascii=False, indent=2),
         )
 
         resp = self.client.chat.completions.create(

@@ -80,6 +80,10 @@ def test_openai_call_uses_split_prompts_and_merges_results():
                 )
             if len(captured_messages) == 3:
                 return DummyResponse(
+                    '{"proposal_framework":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","priority":"high","evidence":"기능 요구사항","strategy_points":["표준 아키텍처 적용","전담 개발 인력 배치","핵심 시나리오 테스트"]}]}'
+                )
+            if len(captured_messages) == 4:
+                return DummyResponse(
                     '{"requirements":[{"id":"F-1","category":"functional","requirement":"핵심 업무기능 제공","proposal":"표준 아키텍처로 구축","priority":"high","evidence":"기능 요구사항"}]}'
                 )
             return DummyResponse(
@@ -103,17 +107,19 @@ def test_openai_call_uses_split_prompts_and_merges_results():
         slide_count=7,
     )
 
-    assert len(captured_messages) == 4
+    assert len(captured_messages) == 5
 
     task_scope_user_message = captured_messages[0][1]["content"]
     requirements_user_message = captured_messages[1][1]["content"]
-    proposal_user_message = captured_messages[2][1]["content"]
-    ppt_user_message = captured_messages[3][1]["content"]
+    framework_user_message = captured_messages[2][1]["content"]
+    summary_user_message = captured_messages[3][1]["content"]
+    ppt_user_message = captured_messages[4][1]["content"]
 
     assert "[RFP 원문]" in task_scope_user_message
     assert "홈페이지 무중단 운영" in requirements_user_message
     assert "[과제사항/주요업무 추출 결과]" in requirements_user_message
-    assert "[고객 요구사항 JSON]" in proposal_user_message
+    assert "[요구사항 JSON]" in framework_user_message
+    assert "[대응전략 틀 JSON]" in summary_user_message
     assert "[요구사항 JSON]" in ppt_user_message
     assert "핵심 업무기능 제공" in ppt_user_message
     assert "표준 아키텍처로 구축" in ppt_user_message
@@ -141,13 +147,14 @@ def test_fallback_proposal_contains_operational_summary_lines():
 
 
 def test_prompt_files_include_summary_guidance_for_grouped_messages():
-    proposal_prompt = Path("app/prompts/proposal_system_prompt.txt").read_text(encoding="utf-8")
+    proposal_framework_prompt = Path("app/prompts/proposal_framework_system_prompt.txt").read_text(encoding="utf-8")
+    proposal_summary_prompt = Path("app/prompts/proposal_summary_system_prompt.txt").read_text(encoding="utf-8")
     ppt_prompt = Path("app/prompts/ppt_system_prompt.txt").read_text(encoding="utf-8")
 
-    assert "상위 개념으로 묶어 요약" in proposal_prompt
-    assert "Marketing DB" in proposal_prompt
-    assert "AI Agent 예시" in proposal_prompt
-    assert "유사 AI 자동화/상품 맵핑 구축 경험" in proposal_prompt
+    assert "대응전략 \"틀\"" in proposal_framework_prompt
+    assert "strategy_points" in proposal_framework_prompt
+    assert "상위 메시지로 묶어 요약" in proposal_summary_prompt
+    assert "2~3줄 제안 요약" in proposal_summary_prompt
     assert "상위 메시지로 묶어" in ppt_prompt
     assert "리드 수집-분석-세일즈 활용 체계" in ppt_prompt
     assert "유사 구축 성과/운영 효과" in ppt_prompt

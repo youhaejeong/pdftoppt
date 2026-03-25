@@ -14,8 +14,10 @@ pdftoppt/
 │   │   ├── task_scope_user_prompt_template.txt # 과제사항/주요업무 추출 유저 프롬프트
 │   │   ├── requirements_system_prompt.txt      # PDF/RFP 요구사항 파악 프롬프트
 │   │   ├── requirements_user_prompt_template.txt # 요구사항 파악 유저 프롬프트
-│   │   ├── proposal_system_prompt.txt          # 제안사 대응전략 분석 프롬프트
-│   │   ├── proposal_user_prompt_template.txt   # 제안전략 분석 유저 프롬프트
+│   │   ├── proposal_framework_system_prompt.txt # 제안전략 틀 도출 프롬프트
+│   │   ├── proposal_framework_user_prompt_template.txt # 제안전략 틀 유저 프롬프트
+│   │   ├── proposal_summary_system_prompt.txt  # 제안요약(2~3줄) 생성 프롬프트
+│   │   ├── proposal_summary_user_prompt_template.txt # 제안요약 유저 프롬프트
 │   │   ├── ppt_system_prompt.txt               # PPT 생성 시스템 프롬프트
 │   │   └── ppt_user_prompt_template.txt        # PPT 생성 유저 프롬프트
 │   └── services/
