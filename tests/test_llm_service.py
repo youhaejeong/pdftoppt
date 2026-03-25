@@ -167,6 +167,8 @@ def test_requirements_prompt_focuses_on_task_scope_only():
     assert "프로젝트 일정" in requirements_prompt
     assert '"과업 수행 범위"' in requirements_prompt
     assert "과제사항과 주요업무만 추출" in task_scope_prompt
+    assert "제안서 제출일자/제출마감/입찰 일정" in task_scope_prompt
+    assert "사업 개요/사업 목적/추진 배경" in task_scope_prompt
 
 
 def test_fallback_excludes_timeline_and_risks_requirements():
