@@ -9,6 +9,7 @@ Priority = Literal["High", "Med", "Low"]
 class RequirementItem(BaseModel):
     id: str
     text: str
+    proposal: str = ""
     priority: Priority
     evidence: str = ""
 
@@ -16,6 +17,9 @@ class RequirementItem(BaseModel):
 class Requirements(BaseModel):
     functional: List[RequirementItem] = Field(default_factory=list)
     non_functional: List[RequirementItem] = Field(default_factory=list)
+    operations: List[RequirementItem] = Field(default_factory=list)
+    integrations: List[RequirementItem] = Field(default_factory=list)
+    security: List[RequirementItem] = Field(default_factory=list)
     constraints: List[RequirementItem] = Field(default_factory=list)
     timeline: List[RequirementItem] = Field(default_factory=list)
     risks: List[RequirementItem] = Field(default_factory=list)

@@ -58,3 +58,40 @@ def test_chrome_devtools_probe_returns_204():
     client = TestClient(app)
     resp = client.get('/.well-known/appspecific/com.chrome.devtools.json')
     assert resp.status_code == 204
+
+
+def test_home_page_slide_count_range():
+    client = TestClient(app)
+    resp = client.get('/')
+    assert resp.status_code == 200
+    assert 'name="slide_count"' in resp.text
+    assert 'min="10"' in resp.text
+    assert 'max="50"' in resp.text
+
+
+def test_process_rejects_too_small_slide_count():
+    client = TestClient(app)
+    files = {"pdf_file": ("sample.pdf", b"%PDF-1.4 test", "application/pdf")}
+    data = {
+        "purpose": "내부 공유",
+        "audience": "팀 리더",
+        "tone": "공식적",
+        "slide_count": "9",
+    }
+    resp = client.post('/v1/process', files=files, data=data)
+    assert resp.status_code == 400
+    assert 'slide_count는 10 이상 50 이하만 가능합니다.' in resp.text
+
+
+def test_process_rejects_too_large_slide_count():
+    client = TestClient(app)
+    files = {"pdf_file": ("sample.pdf", b"%PDF-1.4 test", "application/pdf")}
+    data = {
+        "purpose": "내부 공유",
+        "audience": "팀 리더",
+        "tone": "공식적",
+        "slide_count": "51",
+    }
+    resp = client.post('/v1/process', files=files, data=data)
+    assert resp.status_code == 400
+    assert 'slide_count는 10 이상 50 이하만 가능합니다.' in resp.text

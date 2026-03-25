@@ -1,0 +1,11 @@
+[발표 목적]
+{purpose}
+
+[청중]
+{audience}
+
+[톤앤매너]
+{tone}
+
+[과제사항/주요업무 추출 결과]
+{task_scope_text}
