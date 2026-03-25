@@ -10,7 +10,16 @@ pdftoppt/
 │   ├── main.py                    # FastAPI 엔트리포인트
 │   ├── schemas.py                 # 요청/응답 및 도메인 스키마
 │   ├── prompts/
-│   │   └── system_prompt.txt      # LLM 시스템 프롬프트
+│   │   ├── task_scope_system_prompt.txt        # 과제사항/주요업무 추출 프롬프트
+│   │   ├── task_scope_user_prompt_template.txt # 과제사항/주요업무 추출 유저 프롬프트
+│   │   ├── requirements_system_prompt.txt      # PDF/RFP 요구사항 파악 프롬프트
+│   │   ├── requirements_user_prompt_template.txt # 요구사항 파악 유저 프롬프트
+│   │   ├── proposal_framework_system_prompt.txt # 제안전략 틀 도출 프롬프트
+│   │   ├── proposal_framework_user_prompt_template.txt # 제안전략 틀 유저 프롬프트
+│   │   ├── proposal_summary_system_prompt.txt  # 제안요약(2~3줄) 생성 프롬프트
+│   │   ├── proposal_summary_user_prompt_template.txt # 제안요약 유저 프롬프트
+│   │   ├── ppt_system_prompt.txt               # PPT 생성 시스템 프롬프트
+│   │   └── ppt_user_prompt_template.txt        # PPT 생성 유저 프롬프트
 │   └── services/
 │       ├── pdf_parser.py          # PDF 텍스트 추출(PyMuPDF)
 │       ├── llm_service.py         # OpenAI 호출 + fallback 생성
@@ -85,7 +94,7 @@ PDF 업로드 + 요구사항/PPT 생성 파이프라인 실행
 - `purpose` (string, optional, default: `내부 공유`): 발표 목적
 - `audience` (string, optional, default: `팀 리더`): 청중
 - `tone` (string, optional, default: `공식적`): 톤앤매너
-- `slide_count` (int, optional, default: `10`): 슬라이드 수
+- `slide_count` (int, optional, default: `10`): 슬라이드 수 (`10`~`50`)
 
 **Response 200 (요약)**
 ```json
