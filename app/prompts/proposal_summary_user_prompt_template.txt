@@ -1,0 +1,11 @@
+[발표 목적]
+{purpose}
+
+[청중]
+{audience}
+
+[톤앤매너]
+{tone}
+
+[대응전략 틀 JSON]
+{proposal_framework_json}
